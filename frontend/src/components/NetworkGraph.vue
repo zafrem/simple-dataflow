@@ -1,0 +1,524 @@
+<template>
+  <div class="graph-container">
+    <div ref="graphElement" class="graph-canvas"></div>
+    
+    <div v-if="loading" class="loading-overlay">
+      <el-loading />
+    </div>
+    
+    <div class="controls-bar">
+      <el-button-group class="layout-controls">
+        <el-tooltip content="Hierarchical Layout" placement="bottom">
+          <el-button 
+            :type="currentLayout === 'dagre' ? 'primary' : 'default'"
+            size="small"
+            @click="changeLayout('dagre')">
+            <i class="el-icon-sort"></i>
+          </el-button>
+        </el-tooltip>
+        
+        <el-tooltip content="Force Layout" placement="bottom">
+          <el-button 
+            :type="currentLayout === 'cose' ? 'primary' : 'default'"
+            size="small"
+            @click="changeLayout('cose')">
+            <i class="el-icon-connection"></i>
+          </el-button>
+        </el-tooltip>
+        
+        <el-tooltip content="Circular Layout" placement="bottom">
+          <el-button 
+            :type="currentLayout === 'circle' ? 'primary' : 'default'"
+            size="small"
+            @click="changeLayout('circle')">
+            <i class="el-icon-pie-chart"></i>
+          </el-button>
+        </el-tooltip>
+        
+        <el-tooltip content="Grid Layout" placement="bottom">
+          <el-button 
+            :type="currentLayout === 'grid' ? 'primary' : 'default'"
+            size="small"
+            @click="changeLayout('grid')">
+            <i class="el-icon-menu"></i>
+          </el-button>
+        </el-tooltip>
+        
+        <el-tooltip content="Domain Rows Layout" placement="bottom">
+          <el-button 
+            :type="currentLayout === 'domainRows' ? 'primary' : 'default'"
+            size="small"
+            @click="changeLayout('domainRows')">
+            <i class="el-icon-files"></i>
+          </el-button>
+        </el-tooltip>
+      </el-button-group>
+      
+      <el-divider direction="vertical" />
+      
+      <el-tooltip content="Fit to View" placement="bottom">
+        <el-button size="small" @click="fitToView">
+          <i class="el-icon-full-screen"></i>
+        </el-button>
+      </el-tooltip>
+      
+      <el-tooltip content="Center Graph" placement="bottom">
+        <el-button size="small" @click="centerGraph">
+          <i class="el-icon-aim"></i>
+        </el-button>
+      </el-tooltip>
+      
+      <el-dropdown @command="exportGraph" trigger="click">
+        <el-button size="small">
+          <i class="el-icon-download"></i>
+          <i class="el-icon-arrow-down el-icon--right"></i>
+        </el-button>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="png">Export as PNG</el-dropdown-item>
+            <el-dropdown-item command="jpg">Export as JPG</el-dropdown-item>
+            <el-dropdown-item command="svg">Export as SVG</el-dropdown-item>
+            <el-dropdown-item command="json">Export Data as JSON</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { 
+  createCytoscape, 
+  applyLayout, 
+  searchNodes,
+  filterGraph,
+  exportGraph as exportGraphUtil,
+  getGraphStats
+} from '../utils/graphUtils'
+import { useComponentStore } from '../stores/components'
+import { ElMessage } from 'element-plus'
+
+const props = defineProps({
+  searchTerm: {
+    type: String,
+    default: ''
+  },
+  filters: {
+    type: Object,
+    default: () => ({})
+  },
+  groupVisibility: {
+    type: Object,
+    default: () => ({})
+  },
+  componentVisibility: {
+    type: Object,
+    default: () => ({})
+  },
+  viewMode: {
+    type: String,
+    default: 'grouped'
+  }
+})
+
+const emit = defineEmits(['node-selected', 'stats-updated', 'group-clicked'])
+
+const componentStore = useComponentStore()
+const graphElement = ref(null)
+const loading = ref(false)
+// Use store for layout persistence instead of local ref
+const currentLayout = computed(() => componentStore.currentLayout)
+
+let cy = null
+
+const initializeGraph = async () => {
+  if (!graphElement.value) return
+
+  try {
+    loading.value = true
+    
+    // Create cytoscape instance
+    cy = createCytoscape(graphElement.value, {
+      elements: []
+    })
+
+    // Set up event listeners
+    setupEventListeners()
+    
+    // Load initial data
+    await loadGraphData()
+    
+  } catch (error) {
+    console.error('Error initializing graph:', error)
+    ElMessage.error('Failed to initialize graph visualization')
+  } finally {
+    loading.value = false
+  }
+}
+
+const setupEventListeners = () => {
+  if (!cy) return
+
+  // Node click handler
+  cy.on('tap', 'node', async (event) => {
+    const node = event.target
+    const nodeData = node.data()
+    
+    // Handle group node clicks
+    if (nodeData.type === 'group') {
+      const actualGroupId = nodeData.id.replace('group-', '')
+      emit('group-clicked', actualGroupId)
+      return
+    }
+    
+    // Handle component node clicks
+    try {
+      const componentDetails = await componentStore.fetchComponent(nodeData.id)
+      emit('node-selected', componentDetails)
+      // Remove highlight functionality to prevent flickering
+    } catch (error) {
+      console.error('Error fetching component details:', error)
+      ElMessage.error('Failed to load component details')
+    }
+  })
+
+  // Background click handler - clear selection
+  cy.on('tap', (event) => {
+    if (event.target === cy) {
+      emit('node-selected', null)
+      // Remove clearHighlight to prevent flickering
+    }
+  })
+
+  // Edge click handler
+  cy.on('tap', 'edge', (event) => {
+    const edge = event.target
+    const edgeData = edge.data()
+    console.log('Edge clicked:', edgeData)
+  })
+
+  // Remove double click focus functionality to prevent flickering
+
+  // Mouse over effects
+  cy.on('mouseover', 'node', (event) => {
+    const node = event.target
+    node.style('border-width', '3px')
+  })
+
+  cy.on('mouseout', 'node', (event) => {
+    const node = event.target
+    if (!node.hasClass('highlighted')) {
+      node.style('border-width', '2px')
+    }
+  })
+}
+
+const loadGraphData = async () => {
+  try {
+    loading.value = true
+    const graphData = await componentStore.fetchGraphData(componentStore.getFilterParams())
+    
+    if (cy) {
+      // Clear existing elements
+      cy.elements().remove()
+      
+      // Filter nodes and edges based on view mode and visibility
+      let filteredNodes = graphData.nodes || []
+      let filteredEdges = graphData.edges || []
+      
+      // Debug logging
+      console.log('View Mode:', props.viewMode)
+      console.log('Group Visibility:', props.groupVisibility)
+      console.log('Component Visibility:', props.componentVisibility)
+      console.log('Total nodes:', filteredNodes.length)
+      
+      if (props.viewMode === 'grouped') {
+        // In grouped mode, show group nodes and individual PIPES components
+        // Hide other component types (DB, API, APP, STORAGE) as they belong to groups
+        filteredNodes = filteredNodes.filter(node => {
+          const nodeData = node.data
+          
+          // If it's a group node, show it if:
+          // 1. Group checkbox is explicitly checked, OR
+          // 2. Any of its member components are visible
+          if (nodeData.type === 'group') {
+            // Extract actual group ID from "group-X" format
+            const actualGroupId = nodeData.id.replace('group-', '')
+            
+            console.log(`Group ${nodeData.name} (ID: ${actualGroupId}):`, {
+              groupVisibility: props.groupVisibility[actualGroupId],
+              componentIds: nodeData.metadata?.componentIds
+            })
+            
+            // Check if group is explicitly enabled
+            if (props.groupVisibility[actualGroupId] === true) {
+              console.log(`  -> Showing group ${nodeData.name} (explicitly enabled)`)
+              return true
+            }
+            
+            // Check if any member components are visible
+            if (nodeData.metadata && nodeData.metadata.componentIds && nodeData.metadata.componentIds.length > 0) {
+              const hasVisibleComponents = nodeData.metadata.componentIds.some(componentId => {
+                const isVisible = props.componentVisibility[componentId] === true
+                console.log(`    Component ${componentId}: ${isVisible}`)
+                return isVisible
+              })
+              
+              if (hasVisibleComponents) {
+                console.log(`  -> Showing group ${nodeData.name} (has visible components)`)
+                return true
+              }
+            }
+            
+            console.log(`  -> Hiding group ${nodeData.name}`)
+            return false
+          }
+          
+          // If it's a PIPES component, show it individually (PIPES don't belong to groups)
+          // Check component visibility (must be explicitly true)
+          if (nodeData.type === 'PIPES') {
+            const isVisible = props.componentVisibility[nodeData.id] === true
+            console.log(`PIPES ${nodeData.name} (ID: ${nodeData.id}): ${isVisible}`)
+            return isVisible
+          }
+          
+          // Hide other component types (DB, API, APP, STORAGE) in grouped view
+          // They should be represented by their groups instead
+          console.log(`Hiding component ${nodeData.name} (${nodeData.type}) - represented by group`)
+          return false
+        })
+        
+        // Filter edges to only show connections between visible nodes
+        const visibleNodeIds = new Set(filteredNodes.map(n => n.data.id))
+        filteredEdges = filteredEdges.filter(edge => {
+          return visibleNodeIds.has(edge.data.source) && visibleNodeIds.has(edge.data.target)
+        })
+      } else {
+        // In detailed mode, show individual components based on component visibility
+        filteredNodes = filteredNodes.filter(node => {
+          const nodeData = node.data
+          
+          // Hide group nodes in detailed mode
+          if (nodeData.type === 'group') {
+            return false
+          }
+          
+          // Show components based on visibility (must be explicitly true)
+          return props.componentVisibility[nodeData.id] === true
+        })
+        
+        // Filter edges for visible components
+        const visibleNodeIds = new Set(filteredNodes.map(n => n.data.id))
+        filteredEdges = filteredEdges.filter(edge => {
+          return visibleNodeIds.has(edge.data.source) && visibleNodeIds.has(edge.data.target)
+        })
+      }
+      
+      // Add filtered elements
+      if (filteredNodes.length > 0) {
+        cy.add(filteredNodes)
+      }
+      
+      if (filteredEdges.length > 0) {
+        cy.add(filteredEdges)
+      }
+      
+      // Apply current layout
+      await nextTick()
+      applyLayout(cy, currentLayout.value)
+      
+      // Update stats
+      const stats = getGraphStats(cy)
+      emit('stats-updated', { ...stats, ...graphData.stats })
+    }
+    
+  } catch (error) {
+    console.error('Error loading graph data:', error)
+    ElMessage.error('Failed to load graph data')
+  } finally {
+    loading.value = false
+  }
+}
+
+const changeLayout = (layoutName) => {
+  if (!cy || currentLayout.value === layoutName) return
+  
+  // Update store instead of local ref
+  componentStore.setCurrentLayout(layoutName)
+  applyLayout(cy, layoutName)
+}
+
+const fitToView = () => {
+  if (cy) {
+    cy.fit(cy.elements(), 50)
+  }
+}
+
+const centerGraph = () => {
+  if (cy) {
+    cy.center()
+  }
+}
+
+const exportGraph = async (format) => {
+  if (!cy) return
+
+  try {
+    let result
+    
+    if (format === 'json') {
+      result = cy.json()
+      const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `dataflow-graph-${Date.now()}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+    } else {
+      const blob = exportGraphUtil(cy, format)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `dataflow-graph-${Date.now()}.${format}`
+      a.click()
+      URL.revokeObjectURL(url)
+    }
+    
+    ElMessage.success(`Graph exported as ${format.toUpperCase()}`)
+  } catch (error) {
+    console.error('Error exporting graph:', error)
+    ElMessage.error(`Failed to export graph as ${format.toUpperCase()}`)
+  }
+}
+
+// Watch for search term changes (without highlighting to prevent flicker)
+watch(() => props.searchTerm, (newTerm) => {
+  if (cy) {
+    if (newTerm) {
+      const matches = searchNodes(cy, newTerm)
+      if (matches.length === 0) {
+        ElMessage.info('No matching components found')
+      }
+    }
+    // Remove clearHighlight to prevent flickering
+  }
+})
+
+// Watch for filter changes
+watch(() => props.filters, () => {
+  if (cy) {
+    filterGraph(cy, props.filters)
+  }
+}, { deep: true })
+
+// Watch for view mode changes
+watch(() => props.viewMode, () => {
+  if (cy) {
+    loadGraphData()
+  }
+})
+
+// Watch for group visibility changes
+watch(() => props.groupVisibility, () => {
+  if (cy) {
+    loadGraphData()
+  }
+}, { deep: true })
+
+// Watch for component visibility changes
+watch(() => props.componentVisibility, () => {
+  if (cy) {
+    loadGraphData()
+  }
+}, { deep: true })
+
+// Removed automatic data watcher to prevent screen flickering
+// Data will only reload when manually requested
+
+onMounted(() => {
+  // Initialize layout from localStorage
+  componentStore.initializeLayout()
+  
+  nextTick(() => {
+    initializeGraph()
+  })
+})
+
+onUnmounted(() => {
+  if (cy) {
+    cy.destroy()
+  }
+})
+
+// Expose methods for parent component
+defineExpose({
+  refreshGraph: loadGraphData,
+  changeLayout,
+  fitToView,
+  centerGraph,
+  exportGraph,
+  // Removed highlight functions to prevent flickering
+})
+</script>
+
+<style scoped>
+.graph-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.graph-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.controls-bar {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  z-index: 100;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.layout-controls {
+  display: flex;
+  gap: 0;
+}
+
+@media (max-width: 768px) {
+  .controls-bar {
+    top: 10px;
+    right: 10px;
+    padding: 8px;
+    flex-wrap: wrap;
+  }
+  
+  .layout-controls {
+    flex-wrap: wrap;
+  }
+}
+</style>

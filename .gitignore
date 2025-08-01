@@ -137,3 +137,132 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# =======================================================
+# DataFlow Project Specific
+# =======================================================
+
+# Environment files (keep .env.example)
+.env
+.env.local
+.env.development.local
+.env.test.local  
+.env.production.local
+backend/.env
+frontend/.env
+
+# Development process files
+.dev-pids
+pids/
+
+# Application logs
+logs/
+backend/logs/
+*.log
+server.log
+app.log
+
+# Database files (if using SQLite for development)
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker volumes and data
+postgres_data/
+redis_data/
+docker-data/
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# OS generated files
+Thumbs.db
+Desktop.ini
+
+# Temporary development files
+tmp/
+temp/
+.tmp/
+.temp/
+
+# Test files and coverage
+coverage/
+test-results/
+.nyc_output/
+junit.xml
+
+# Build outputs (frontend)
+frontend/dist/
+frontend/build/
+backend/dist/
+backend/build/
+
+# Generated documentation
+docs/generated/
+api-docs/
+
+# Package manager lock files (choose one strategy)
+# Uncomment the next line if you want to ignore lock files
+# package-lock.json
+# yarn.lock
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Optional: JetBrains IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Optional: macOS
+.AppleDouble
+.LSOverride
+Icon
+
+# Optional: Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Optional: Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# Development tools
+.eslintcache
+.stylelintcache
+
+# Mock data files (if you don't want to commit test files)
+/tmp/dataflow-logs/
+test-logs/
+mock-data/
+
+# Redis dump files
+dump.rdb
+
+# Backup files
+*.backup
+*.bak
+*.orig
+
+# Local configuration overrides
+config/local.js
+config/local.json
