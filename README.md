@@ -1,6 +1,8 @@
 # DataFlow Visualization System
 
 A comprehensive full-stack web application for visualizing large-scale system architecture with real-time data connectors.
+## Demo
+![Demo](./image/demo.gif)
 
 ## 🚀 Features
 
