@@ -929,6 +929,11 @@ defineExpose({
   font-weight: 600;
   color: #2c3e50;
   font-size: 14px;
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+  line-height: 1.3;
+  max-width: 180px;
 }
 
 
@@ -966,12 +971,20 @@ defineExpose({
 
 .component-item {
   margin-bottom: 10px;
-  padding: 10px 12px;
+  padding: 20px 12px;
   border-radius: 6px;
   transition: all 0.2s ease;
   border: 1px solid #e8f4ff;
   width: 100%;
   box-sizing: border-box;
+  min-height: 68px;
+  display: flex;
+  align-items: flex-start;
+}
+
+.component-item .el-checkbox {
+  margin-top: 2px;
+  align-self: flex-start;
 }
 
 .component-item:hover {
@@ -995,12 +1008,20 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+  flex: 1;
 }
 
 .component-name {
   font-size: 13px;
   font-weight: 600;
   color: #2c3e50;
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+  line-height: 1.3;
+  max-width: 150px;
 }
 
 .component-domain {
@@ -1128,6 +1149,11 @@ defineExpose({
   font-weight: 600;
   font-size: 14px;
   color: #303133;
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+  line-height: 1.3;
+  max-width: 200px;
 }
 
 .domain-stats,

@@ -17,12 +17,12 @@ export const createCytoscape = (container, options = {}) => {
         'border-width': 0,
         'color': '#374151',
         'label': function(ele) {
-          return ele.data('type') + '\n' + ele.data('name')
+          return ele.data('name') + '\n' + ele.data('type')
         },
         'text-valign': 'center',
         'text-halign': 'center',
         'font-size': '10px',
-        'font-weight': '400',
+        'font-weight': 'bold',
         'width': 50,
         'height': 50,
         'overlay-opacity': 0,
@@ -43,12 +43,15 @@ export const createCytoscape = (container, options = {}) => {
         'background-gradient-stop-colors': '#dbeafe #bfdbfe #93c5fd',
         'background-gradient-stop-positions': '0% 50% 100%',
         'label': function(ele) {
-          return ele.data('type') + '\n' + ele.data('name')
+          return ele.data('name') + '\n' + ele.data('type')
         },
         'color': '#374151',
-        'font-size': '8px',
+        'font-size': '7px',
+        'font-weight': 'bold',
         'text-valign': 'center',
-        'text-halign': 'center'
+        'text-halign': 'center',
+        'text-max-width': '50px',
+        'text-wrap': 'wrap'
       }
     },
     {
@@ -63,12 +66,15 @@ export const createCytoscape = (container, options = {}) => {
         'background-gradient-stop-colors': '#dcfce7 #bbf7d0 #86efac',
         'background-gradient-stop-positions': '0% 50% 100%',
         'label': function(ele) {
-          return ele.data('type') + '\n' + ele.data('name')
+          return ele.data('name') + '\n' + ele.data('type')
         },
         'color': '#374151',
-        'font-size': '8px',
+        'font-size': '7px',
+        'font-weight': 'bold',
         'text-valign': 'center',
-        'text-halign': 'center'
+        'text-halign': 'center',
+        'text-max-width': '60px',
+        'text-wrap': 'wrap'
       }
     },
     {
@@ -83,12 +89,15 @@ export const createCytoscape = (container, options = {}) => {
         'background-gradient-stop-colors': '#fef3c7 #fed7aa #fdba74',
         'background-gradient-stop-positions': '0% 50% 100%',
         'label': function(ele) {
-          return ele.data('type') + '\n' + ele.data('name')
+          return ele.data('name') + '\n' + ele.data('type')
         },
         'color': '#374151',
-        'font-size': '8px',
+        'font-size': '7px',
+        'font-weight': 'bold',
         'text-valign': 'center',
-        'text-halign': 'center'
+        'text-halign': 'center',
+        'text-max-width': '55px',
+        'text-wrap': 'wrap'
       }
     },
     {
@@ -103,10 +112,11 @@ export const createCytoscape = (container, options = {}) => {
         'background-gradient-stop-positions': '0% 70% 100%',
         'border-radius': '6px',
         'label': function(ele) {
-          return ele.data('type') + '\n' + ele.data('name')
+          return ele.data('name') + '\n' + ele.data('type')
         },
         'color': '#374151',
         'font-size': '8px',
+        'font-weight': 'bold',
         'text-max-width': '55px',
         'text-valign': 'center',
         'text-halign': 'center'
@@ -124,10 +134,11 @@ export const createCytoscape = (container, options = {}) => {
         'background-gradient-stop-positions': '0% 50% 100%',
         'border-radius': '12px',
         'label': function(ele) {
-          return ele.data('type') + '\n' + ele.data('name')
+          return ele.data('name') + '\n' + ele.data('type')
         },
         'color': '#374151',
         'font-size': '8px',
+        'font-weight': 'bold',
         'text-max-width': '85px',
         'text-valign': 'center',
         'text-halign': 'center'
@@ -153,8 +164,10 @@ export const createCytoscape = (container, options = {}) => {
         'text-outline-color': '#fff',
         'text-max-width': '150px',
         'label': function(ele) { 
-          return (ele.data('groupType') || 'GROUP') + '\n' + ele.data('name')
-        }
+          return ele.data('name')
+        },
+        'font-size': '14px',
+        'font-weight': 'bold'
       }
     },
     {
@@ -178,10 +191,12 @@ export const createCytoscape = (container, options = {}) => {
         'text-outline-color': '#fff',
         'text-max-width': '190px',
         'label': function(ele) { 
-          return 'DOMAIN\n' + ele.data('name') + '\n' + 
+          return ele.data('name') + '\n' + 
                  (ele.data('metadata')?.groupCount || 0) + ' groups, ' + 
                  (ele.data('metadata')?.componentCount || 0) + ' components'
-        }
+        },
+        'font-size': '16px',
+        'font-weight': 'bold'
       }
     },
     {
