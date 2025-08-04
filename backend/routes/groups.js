@@ -108,6 +108,7 @@ router.post('/', async (req, res) => {
       description,
       groupType = 'LOGICAL',
       domain,
+      domainId,
       metadata = {},
       color,
       position = { x: 0, y: 0 },
@@ -125,6 +126,7 @@ router.post('/', async (req, res) => {
       description,
       groupType,
       domain,
+      domainId,
       metadata,
       color,
       position

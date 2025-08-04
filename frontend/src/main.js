@@ -10,6 +10,7 @@ import Dashboard from './views/Dashboard.vue'
 import DataDiagram from './views/DataDiagram.vue'
 import DataView from './views/DataView.vue'
 import Groups from './views/Groups.vue'
+import Domains from './views/Domains.vue'
 import Settings from './views/Settings.vue'
 
 const routes = [
@@ -17,6 +18,7 @@ const routes = [
   { path: '/diagram', name: 'DataDiagram', component: DataDiagram },
   { path: '/data', name: 'DataView', component: DataView },
   { path: '/groups', name: 'Groups', component: Groups },
+  { path: '/domains', name: 'Domains', component: Domains },
   { path: '/settings', name: 'Settings', component: Settings }
 ]
 

@@ -63,6 +63,14 @@ const Component = sequelize.define('Component', {
   connectorId: {
     type: DataTypes.INTEGER,
     allowNull: true
+  },
+  domainId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'domains',
+      key: 'id'
+    }
   }
 }, {
   tableName: 'components',

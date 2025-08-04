@@ -1,5 +1,5 @@
 const express = require('express');
-const { Component, Connection } = require('../models');
+const { Component, Connection, Domain, ComponentGroup } = require('../models');
 const router = express.Router();
 
 router.get('/', async (req, res) => {

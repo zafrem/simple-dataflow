@@ -119,10 +119,18 @@ const props = defineProps({
   viewMode: {
     type: String,
     default: 'grouped'
+  },
+  selectedDomainId: {
+    type: [String, Number],
+    default: null
+  },
+  selectedGroupId: {
+    type: [String, Number],
+    default: null
   }
 })
 
-const emit = defineEmits(['node-selected', 'stats-updated', 'group-clicked'])
+const emit = defineEmits(['node-selected', 'stats-updated', 'group-clicked', 'domain-clicked'])
 
 const componentStore = useComponentStore()
 const graphElement = ref(null)
@@ -164,6 +172,13 @@ const setupEventListeners = () => {
   cy.on('tap', 'node', async (event) => {
     const node = event.target
     const nodeData = node.data()
+    
+    // Handle domain node clicks
+    if (nodeData.type === 'domain') {
+      const actualDomainId = nodeData.id.replace('domain-', '')
+      emit('domain-clicked', actualDomainId)
+      return
+    }
     
     // Handle group node clicks
     if (nodeData.type === 'group') {
@@ -217,7 +232,14 @@ const setupEventListeners = () => {
 const loadGraphData = async () => {
   try {
     loading.value = true
-    const graphData = await componentStore.fetchGraphData(componentStore.getFilterParams())
+    const filterParams = componentStore.getFilterParams()
+    
+    // Add viewMode parameter for domain-only view (only when not drilling down)
+    if (props.viewMode === 'domains' && !props.selectedDomainId && !props.selectedGroupId) {
+      filterParams.viewMode = 'domains'
+    }
+    
+    const graphData = await componentStore.fetchGraphData(filterParams)
     
     if (cy) {
       // Clear existing elements
@@ -227,13 +249,69 @@ const loadGraphData = async () => {
       let filteredNodes = graphData.nodes || []
       let filteredEdges = graphData.edges || []
       
-      // Debug logging
-      console.log('View Mode:', props.viewMode)
-      console.log('Group Visibility:', props.groupVisibility)
-      console.log('Component Visibility:', props.componentVisibility)
-      console.log('Total nodes:', filteredNodes.length)
+      // Apply filtering based on drill-down state
       
-      if (props.viewMode === 'grouped') {
+      // Handle pure domain view mode (no drill-down, just show all domains)
+      if (props.viewMode === 'domains' && !props.selectedDomainId && !props.selectedGroupId) {
+        // When using domain-only backend endpoint, minimal filtering needed
+        // The backend already returns only domains and domain-to-domain connections
+        filteredNodes = filteredNodes.filter(node => {
+          const nodeData = node.data
+          return nodeData.type === 'domain'
+        })
+        
+        // Filter edges to only show domain-to-domain connections
+        filteredEdges = filteredEdges.filter(edge => {
+          return edge.data.connectionType === 'domain-to-domain'
+        })
+        
+      } else if (props.selectedDomainId && !props.selectedGroupId) {
+        // Domain selected but no group - show domain + its groups
+        filteredNodes = filteredNodes.filter(node => {
+          const nodeData = node.data
+          
+          // Always show the selected domain
+          if (nodeData.type === 'domain') {
+            return nodeData.id === `domain-${props.selectedDomainId}`
+          }
+          
+          // Show groups that belong to the selected domain
+          if (nodeData.type === 'group') {
+            return nodeData.metadata && nodeData.metadata.domainId == props.selectedDomainId
+          }
+          
+          // Hide components and other domains when drilling down to domain level
+          return false
+        })
+        
+        // Filter edges to only show connections between visible nodes
+        const visibleNodeIds = new Set(filteredNodes.map(n => n.data.id))
+        filteredEdges = filteredEdges.filter(edge => {
+          return visibleNodeIds.has(edge.data.source) && visibleNodeIds.has(edge.data.target)
+        })
+        
+      } else if (props.selectedGroupId) {
+        // Group selected - show components within the group
+        const componentTypes = ['DB', 'APP', 'API', 'STORAGE', 'PIPES']
+        filteredNodes = filteredNodes.filter(node => {
+          const nodeData = node.data
+          
+          // Show components based on visibility and group membership
+          if (componentTypes.includes(nodeData.type)) {
+            // Check if component is visible and belongs to selected group
+            return props.componentVisibility[nodeData.id] === true
+          }
+          
+          // Hide domains and groups when showing components
+          return false
+        })
+        
+        // Filter edges to only show connections between visible components
+        const visibleNodeIds = new Set(filteredNodes.map(n => n.data.id))
+        filteredEdges = filteredEdges.filter(edge => {
+          return visibleNodeIds.has(edge.data.source) && visibleNodeIds.has(edge.data.target)
+        })
+      } else if (props.viewMode === 'grouped' && !props.selectedDomainId && !props.selectedGroupId) {
         // In grouped mode, show group nodes and individual PIPES components
         // Hide other component types (DB, API, APP, STORAGE) as they belong to groups
         filteredNodes = filteredNodes.filter(node => {
@@ -246,46 +324,33 @@ const loadGraphData = async () => {
             // Extract actual group ID from "group-X" format
             const actualGroupId = nodeData.id.replace('group-', '')
             
-            console.log(`Group ${nodeData.name} (ID: ${actualGroupId}):`, {
-              groupVisibility: props.groupVisibility[actualGroupId],
-              componentIds: nodeData.metadata?.componentIds
-            })
-            
             // Check if group is explicitly enabled
             if (props.groupVisibility[actualGroupId] === true) {
-              console.log(`  -> Showing group ${nodeData.name} (explicitly enabled)`)
               return true
             }
             
             // Check if any member components are visible
             if (nodeData.metadata && nodeData.metadata.componentIds && nodeData.metadata.componentIds.length > 0) {
               const hasVisibleComponents = nodeData.metadata.componentIds.some(componentId => {
-                const isVisible = props.componentVisibility[componentId] === true
-                console.log(`    Component ${componentId}: ${isVisible}`)
-                return isVisible
+                return props.componentVisibility[componentId] === true
               })
               
               if (hasVisibleComponents) {
-                console.log(`  -> Showing group ${nodeData.name} (has visible components)`)
                 return true
               }
             }
             
-            console.log(`  -> Hiding group ${nodeData.name}`)
             return false
           }
           
           // If it's a PIPES component, show it individually (PIPES don't belong to groups)
           // Check component visibility (must be explicitly true)
           if (nodeData.type === 'PIPES') {
-            const isVisible = props.componentVisibility[nodeData.id] === true
-            console.log(`PIPES ${nodeData.name} (ID: ${nodeData.id}): ${isVisible}`)
-            return isVisible
+            return props.componentVisibility[nodeData.id] === true
           }
           
           // Hide other component types (DB, API, APP, STORAGE) in grouped view
           // They should be represented by their groups instead
-          console.log(`Hiding component ${nodeData.name} (${nodeData.type}) - represented by group`)
           return false
         })
         
@@ -294,13 +359,13 @@ const loadGraphData = async () => {
         filteredEdges = filteredEdges.filter(edge => {
           return visibleNodeIds.has(edge.data.source) && visibleNodeIds.has(edge.data.target)
         })
-      } else {
-        // In detailed mode, show individual components based on component visibility
+      } else if (props.viewMode === 'components' && !props.selectedDomainId && !props.selectedGroupId) {
+        // In detailed component mode, show individual components based on component visibility
         filteredNodes = filteredNodes.filter(node => {
           const nodeData = node.data
           
-          // Hide group nodes in detailed mode
-          if (nodeData.type === 'group') {
+          // Hide group nodes and domain nodes in detailed component mode
+          if (nodeData.type === 'group' || nodeData.type === 'domain') {
             return false
           }
           
@@ -314,6 +379,7 @@ const loadGraphData = async () => {
           return visibleNodeIds.has(edge.data.source) && visibleNodeIds.has(edge.data.target)
         })
       }
+      // Note: If none of the conditions match, we keep all nodes (fallback behavior)
       
       // Add filtered elements
       if (filteredNodes.length > 0) {
@@ -433,6 +499,20 @@ watch(() => props.componentVisibility, () => {
     loadGraphData()
   }
 }, { deep: true })
+
+// Watch for selected domain changes
+watch(() => props.selectedDomainId, () => {
+  if (cy) {
+    loadGraphData()
+  }
+})
+
+// Watch for selected group changes  
+watch(() => props.selectedGroupId, () => {
+  if (cy) {
+    loadGraphData()
+  }
+})
 
 // Removed automatic data watcher to prevent screen flickering
 // Data will only reload when manually requested

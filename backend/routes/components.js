@@ -108,8 +108,8 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Name and type are required' });
     }
 
-    if (!['DB', 'API', 'APP'].includes(type)) {
-      return res.status(400).json({ error: 'Type must be DB, API, or APP' });
+    if (!['DB', 'API', 'APP', 'STORAGE', 'PIPES'].includes(type)) {
+      return res.status(400).json({ error: 'Type must be DB, API, APP, STORAGE, or PIPES' });
     }
 
     const existingTags = await Component.findAll({
@@ -120,7 +120,7 @@ router.post('/', async (req, res) => {
     const finalTag = tag || generateUniqueTag(name, type, existingTags);
 
     if (!validateTag(finalTag)) {
-      return res.status(400).json({ error: 'Invalid tag format. Must end with _db, _api, or _app' });
+      return res.status(400).json({ error: 'Invalid tag format. Must end with _db, _api, _app, _storage, or _pipes' });
     }
 
     const existingComponent = await Component.findOne({ where: { tag: finalTag } });

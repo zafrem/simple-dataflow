@@ -158,6 +158,33 @@ export const createCytoscape = (container, options = {}) => {
       }
     },
     {
+      selector: 'node[type="domain"]',
+      style: {
+        'background-color': 'data(color)',
+        'background-opacity': 0.2,
+        'border-color': 'data(color)',
+        'border-opacity': 0.8,
+        'shape': 'round-rectangle',
+        'width': '200px',
+        'height': '120px',
+        'font-size': '14px',
+        'font-weight': 'bold',
+        'text-valign': 'center',
+        'text-halign': 'center',
+        'border-width': '3px',
+        'border-style': 'solid',
+        'color': '#000',
+        'text-outline-width': 2,
+        'text-outline-color': '#fff',
+        'text-max-width': '190px',
+        'label': function(ele) { 
+          return 'DOMAIN\n' + ele.data('name') + '\n' + 
+                 (ele.data('metadata')?.groupCount || 0) + ' groups, ' + 
+                 (ele.data('metadata')?.componentCount || 0) + ' components'
+        }
+      }
+    },
+    {
       selector: 'node:selected',
       style: {
         'border-width': 4,
@@ -209,6 +236,26 @@ export const createCytoscape = (container, options = {}) => {
         'target-arrow-color': '#9b59b6',
         'line-style': 'dotted',
         'width': 4,
+        'opacity': 0.8
+      }
+    },
+    {
+      selector: 'edge[connectionType="domain-to-domain"]',
+      style: {
+        'line-color': '#2980b9',
+        'target-arrow-color': '#2980b9',
+        'line-style': 'solid',
+        'width': 5,
+        'opacity': 0.9
+      }
+    },
+    {
+      selector: 'edge[connectionType="group-to-group"]',
+      style: {
+        'line-color': '#27ae60',
+        'target-arrow-color': '#27ae60',
+        'line-style': 'dashed',
+        'width': 3,
         'opacity': 0.8
       }
     },

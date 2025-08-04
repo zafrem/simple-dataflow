@@ -1,5 +1,5 @@
 const extractDomainFromTag = (tag) => {
-  const match = tag.match(/^(.+)_(db|api|app)$/);
+  const match = tag.match(/^(.+)_(db|api|app|storage|pipes)$/);
   return match ? match[1] : null;
 };
 
@@ -10,7 +10,7 @@ const generateTagPattern = (pattern, data) => {
 };
 
 const validateTag = (tag) => {
-  const regex = /^[a-zA-Z0-9_-]+_(db|api|app)$/;
+  const regex = /^[a-zA-Z0-9_-]+_(db|api|app|storage|pipes)$/;
   return regex.test(tag);
 };
 

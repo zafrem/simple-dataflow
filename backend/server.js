@@ -11,7 +11,7 @@ const redisClient = require('./config/redis');
 
 const componentRoutes = require('./routes/components');
 const connectionRoutes = require('./routes/connections');
-const domainRoutes = require('./routes/domains');
+const domainRoutes = require('./routes/domainsNew');
 const connectorRoutes = require('./routes/connectors');
 const groupRoutes = require('./routes/groups');
 const { router: syncRoutes } = require('./routes/sync');

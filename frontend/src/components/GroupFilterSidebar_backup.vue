@@ -8,11 +8,10 @@
     <div class="filter-section">
       <div class="section-title">View Mode</div>
       
-      <el-tooltip content="Toggle between Domain View → Group View → Component View" placement="top">
-        <el-button
-          @click="toggleViewMode"
-          :type="getViewModeButtonType()"
-          class="view-mode-toggle">
+      <el-button
+        @click="toggleViewMode"
+        :type="getViewModeButtonType()"
+        class="view-mode-toggle">
         <el-icon class="toggle-icon">
           <component :is="getViewModeIcon()" />
         </el-icon>
@@ -20,8 +19,7 @@
         <el-icon class="arrow-icon">
           <ArrowRight />
         </el-icon>
-        </el-button>
-      </el-tooltip>
+      </el-button>
       
       <!-- Breadcrumb for drill-down navigation -->
       <div v-if="viewMode !== 'domains'" class="breadcrumb-nav">
@@ -102,7 +100,7 @@
     <!-- Group View Content -->
     <div class="content-section" v-else-if="viewMode === 'grouped'">
       <div class="content-header">
-        <div class="section-title">Groups in {{ selectedDomain?.name || 'All Domains' }}</div>
+        <div class="section-title">Component Groups</div>
         <el-tooltip content="Toggle all groups">
           <el-button 
             size="small" 
@@ -118,35 +116,85 @@
           <div 
             v-for="group in filteredGroups" 
             :key="group.id"
-            class="group-item"
-            @click="selectGroup(group)">
-            
-            <div class="group-content">
-              <div class="group-header">
+            class="group-checkbox-item">
+          
+          <el-checkbox
+            v-model="groupVisibility[group.id]"
+            @change="onGroupVisibilityChange"
+            class="group-checkbox">
+            <div class="group-checkbox-content">
+              <div class="group-indicator">
                 <div 
                   class="group-color-dot"
-                  :style="{ backgroundColor: group.color || '#409eff' }">
+                  :style="{ backgroundColor: group.color }">
                 </div>
                 <span class="group-name">{{ group.name }}</span>
-                <el-tag :type="getGroupTypeColor(group.groupType)" size="small">{{ group.groupType }}</el-tag>
               </div>
-              <div class="group-stats">
-                <span class="stat-item">{{ getGroupComponentCount(group.id) }} components</span>
-              </div>
-              <div v-if="group.description" class="group-description">
-                {{ group.description }}
+              <div class="group-meta">
+                <el-tag 
+                  :type="getGroupTypeColor(group.groupType)" 
+                  size="mini">
+                  {{ group.groupType }}
+                </el-tag>
+                <span class="component-count">
+                  ({{ getGroupComponentCount(group.id) }})
+                </span>
               </div>
             </div>
-            <el-icon class="group-arrow"><ArrowRight /></el-icon>
+          </el-checkbox>
+
+          <!-- Expand/Collapse button for group components -->
+          <el-button
+            v-if="getGroupComponentCount(group.id) > 0"
+            :icon="groupExpanded[group.id] ? ArrowDown : ArrowRight"
+            size="small"
+            text
+            class="expand-button"
+            @click="toggleGroupExpansion(group.id)">
+          </el-button>
+          </div>
+
+          <!-- Show group components when expanded -->
+          <div 
+            v-for="group in filteredGroups" 
+            :key="`${group.id}-components`"
+          v-show="groupExpanded[group.id]"
+          class="group-components-list">
+          
+          <div 
+            v-for="component in getGroupComponents(group.id)"
+            :key="component.id"
+            class="component-item"
+            :class="{ 
+              'component-visible': componentVisibility[component.id],
+              'component-hidden': !componentVisibility[component.id]
+            }">
+            
+            <el-checkbox
+              v-model="componentVisibility[component.id]"
+              @change="onComponentVisibilityChange"
+              size="small">
+              
+              <div class="component-content">
+                <el-tag
+                  :type="getComponentTypeColor(component.type)"
+                  size="mini">
+                  {{ component.type }}
+                </el-tag>
+                <span class="component-name">{{ component.name }}</span>
+                <span class="component-domain">{{ component.domain || 'No domain' }}</span>
+              </div>
+            </el-checkbox>
           </div>
         </div>
+      </div>
       </div>
     </div>
 
     <!-- Component View Content -->
     <div class="content-section" v-else>
       <div class="content-header">
-        <div class="section-title">Components in {{ selectedGroup?.name || 'All Groups' }}</div>
+        <div class="section-title">Components</div>
         <el-tooltip content="Toggle all components">
           <el-button 
             size="small" 
@@ -215,21 +263,13 @@
     </div>
 
     <div class="filter-stats">
-      <div class="stats-item" v-if="viewMode === 'domains'">
-        <span class="stats-label">Total Domains:</span>
-        <span class="stats-value">{{ domains.length }}</span>
-      </div>
-      <div class="stats-item" v-else-if="viewMode === 'grouped'">
-        <span class="stats-label">Groups in {{ selectedDomain?.name || 'All Domains' }}:</span>
-        <span class="stats-value">{{ filteredGroups.length }}</span>
-      </div>
-      <div class="stats-item" v-else>
-        <span class="stats-label">Components in {{ selectedGroup?.name || 'Selected Group' }}:</span>
-        <span class="stats-value">{{ filteredComponents.length }}</span>
+      <div class="stats-item">
+        <span class="stats-label">Visible Groups:</span>
+        <span class="stats-value">{{ visibleGroupsCount }}</span>
       </div>
       <div class="stats-item">
-        <span class="stats-label">Visible on Graph:</span>
-        <span class="stats-value">{{ visibleNodesCount }}</span>
+        <span class="stats-label">Visible Components:</span>
+        <span class="stats-value">{{ visibleComponentsCount }}</span>
       </div>
     </div>
     
@@ -240,7 +280,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
-import { ArrowDown, ArrowRight, Collection, Grid, Search, House, FolderOpened, DocumentCopy } from '@element-plus/icons-vue'
+import { ArrowDown, ArrowRight, Collection, Grid, Search } from '@element-plus/icons-vue'
 
 const props = defineProps({
   groups: {
@@ -268,13 +308,9 @@ const emit = defineEmits([
 const groupVisibility = reactive({}) // groupId -> boolean
 const componentVisibility = reactive({}) // componentId -> boolean
 const groupExpanded = reactive({}) // groupId -> boolean
-const viewMode = ref('domains')
+const viewMode = ref('grouped')
 const groupMemberships = reactive({}) // groupId -> [componentIds]
 const searchTerm = ref('')
-const domains = ref([])
-const selectedDomain = ref(null)
-const selectedGroup = ref(null)
-const domainVisibility = reactive({})
 
 // Computed
 const allGroupsVisible = computed(() => {
@@ -297,71 +333,37 @@ const visibleComponentsCount = computed(() => {
   return Object.values(componentVisibility).filter(visible => visible).length
 })
 
-const allDomainsVisible = computed(() => {
-  return Object.values(domainVisibility).every(visible => visible)
-})
-
-const visibleNodesCount = computed(() => {
-  if (viewMode.value === 'domains') {
-    return filteredDomains.value.length
-  } else if (viewMode.value === 'grouped') {
-    return filteredGroups.value.length + (selectedDomain.value ? 1 : 0) // groups + selected domain
-  } else {
-    return filteredComponents.value.filter(comp => componentVisibility[comp.id] === true).length
-  }
-})
-
-const filteredDomains = computed(() => {
-  if (!searchTerm.value) return domains.value
-  
-  return domains.value.filter(domain => 
-    domain.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-    domain.description?.toLowerCase().includes(searchTerm.value.toLowerCase())
-  )
-})
-
 const headerTitle = computed(() => {
-  if (viewMode.value === 'domains') {
-    return 'Domain View'
-  } else if (viewMode.value === 'grouped') {
-    return selectedDomain.value ? `Groups in ${selectedDomain.value.name}` : 'Group View'
+  if (viewMode.value === 'grouped') {
+    return 'Group View'
+  } else if (props.selectedGroupId) {
+    const group = props.groups.find(g => g.id == props.selectedGroupId)
+    return group ? `${group.name} Components` : 'Component View'
   } else {
-    return selectedGroup.value ? `Components in ${selectedGroup.value.name}` : 'Component View'
+    return 'Component View'
   }
 })
 
-// Filtered lists based on search term and selected domain
+// Filtered lists based on search term
 const filteredGroups = computed(() => {
-  let groups = props.groups
+  if (!searchTerm.value) return props.groups
   
-  // Filter by selected domain
-  if (selectedDomain.value) {
-    groups = groups.filter(group => group.domainId === selectedDomain.value.id)
-  }
-  
-  // Filter by search term
-  if (searchTerm.value) {
-    const term = searchTerm.value.toLowerCase()
-    groups = groups.filter(group => 
-      group.name.toLowerCase().includes(term) ||
-      group.description?.toLowerCase().includes(term) ||
-      group.groupType.toLowerCase().includes(term) ||
-      group.domain?.toLowerCase().includes(term)
-    )
-  }
-  
-  return groups
+  const term = searchTerm.value.toLowerCase()
+  return props.groups.filter(group => 
+    group.name.toLowerCase().includes(term) ||
+    group.description?.toLowerCase().includes(term) ||
+    group.groupType.toLowerCase().includes(term) ||
+    group.domain?.toLowerCase().includes(term)
+  )
 })
 
 const filteredComponents = computed(() => {
   let components = props.components
   
-  // Filter by selected group
-  if (selectedGroup.value) {
-    // Get components that are members of the selected group
-    const groupComponents = selectedGroup.value.components || []
-    const componentIds = groupComponents.map(c => c.id)
-    components = components.filter(comp => componentIds.includes(comp.id))
+  // Filter by selected group if one is specified
+  if (props.selectedGroupId) {
+    const memberIds = groupMemberships[props.selectedGroupId] || []
+    components = components.filter(component => memberIds.includes(component.id))
   }
   
   // Filter by search term
@@ -380,100 +382,6 @@ const filteredComponents = computed(() => {
 })
 
 // Methods
-const loadDomains = async () => {
-  try {
-    const response = await fetch('http://localhost:3001/api/domains')
-    const data = await response.json()
-    domains.value = data || []
-    
-    // Initialize domain visibility
-    domains.value.forEach(domain => {
-      domainVisibility[domain.id] = true
-    })
-  } catch (error) {
-    console.error('Error loading domains:', error)
-  }
-}
-
-const selectDomain = (domain) => {
-  selectedDomain.value = domain
-  viewMode.value = 'grouped'
-  emit('view-mode-changed', 'grouped')
-}
-
-const selectGroup = async (group) => {
-  // Load full group data with components
-  try {
-    const response = await fetch(`http://localhost:3001/api/groups/${group.id}?includeComponents=true`)
-    const data = await response.json()
-    selectedGroup.value = data
-    
-    // Clear existing component visibility
-    Object.keys(componentVisibility).forEach(key => {
-      componentVisibility[key] = false
-    })
-    
-    // Set components in this group as visible
-    if (data.components && data.components.length > 0) {
-      data.components.forEach(component => {
-        // Convert ID to string to match graph data format
-        componentVisibility[component.id.toString()] = true
-      })
-    }
-    
-    viewMode.value = 'components'
-    emit('view-mode-changed', 'components')
-    emit('component-visibility-changed', { ...componentVisibility })
-  } catch (error) {
-    console.error('Error loading group details:', error)
-    selectedGroup.value = group
-    viewMode.value = 'components'
-    emit('view-mode-changed', 'components')
-  }
-}
-
-const goToDomainView = () => {
-  viewMode.value = 'domains'
-  selectedDomain.value = null
-  selectedGroup.value = null
-  emit('view-mode-changed', 'domains')
-}
-
-const goToGroupView = () => {
-  viewMode.value = 'grouped'
-  selectedGroup.value = null
-  emit('view-mode-changed', 'grouped')
-}
-
-const toggleAllDomains = () => {
-  const newVisibility = !allDomainsVisible.value
-  domains.value.forEach(domain => {
-    domainVisibility[domain.id] = newVisibility
-  })
-}
-
-const getViewModeButtonType = () => {
-  return 'primary' // Always primary to indicate it's an interactive toggle button
-}
-
-const getViewModeIcon = () => {
-  switch (viewMode.value) {
-    case 'domains': return House
-    case 'grouped': return FolderOpened  
-    case 'components': return DocumentCopy
-    default: return House
-  }
-}
-
-const getViewModeLabel = () => {
-  switch (viewMode.value) {
-    case 'domains': return 'Domain View'
-    case 'grouped': return 'Group View'
-    case 'components': return 'Component View'
-    default: return 'Domain View'
-  }
-}
-
 const initializeVisibility = () => {
   let groupsChanged = false
   let componentsChanged = false
@@ -601,23 +509,8 @@ const onComponentVisibilityChange = () => {
 }
 
 const toggleViewMode = () => {
-  // Cycle through: Domain View → Group View → Component View → Domain View
-  if (viewMode.value === 'domains') {
-    viewMode.value = 'grouped'
-    // Keep selectedDomain when going to group view for drill-down context
-    selectedGroup.value = null
-    emit('view-mode-changed', 'grouped')
-  } else if (viewMode.value === 'grouped') {
-    viewMode.value = 'components'
-    // Keep selectedDomain and selectedGroup for drill-down context
-    emit('view-mode-changed', 'components')
-  } else {
-    viewMode.value = 'domains'
-    // Clear all drill-down state when returning to domain view
-    selectedDomain.value = null
-    selectedGroup.value = null
-    emit('view-mode-changed', 'domains')
-  }
+  viewMode.value = viewMode.value === 'grouped' ? 'detailed' : 'grouped'
+  onViewModeChange()
 }
 
 const onViewModeChange = () => {
@@ -674,13 +567,7 @@ const showOnlySelected = () => {
 }
 
 const resetFilters = () => {
-  searchTerm.value = ''
-  
   // Reset all visibility to true
-  domains.value.forEach(domain => {
-    domainVisibility[domain.id] = true
-  })
-  
   props.groups.forEach(group => {
     groupVisibility[group.id] = true
     groupExpanded[group.id] = false
@@ -690,14 +577,10 @@ const resetFilters = () => {
     componentVisibility[component.id] = true
   })
 
-  // Reset navigation state
-  viewMode.value = 'domains'
-  selectedDomain.value = null
-  selectedGroup.value = null
+  viewMode.value = 'grouped'
   
-  emit('group-visibility-changed', groupVisibility)
-  emit('component-visibility-changed', componentVisibility)
-  emit('view-mode-changed', 'domains')
+  onGroupVisibilityChange()
+  onViewModeChange()
 }
 
 // Watchers
@@ -726,8 +609,7 @@ watch(() => props.selectedGroupId, (newGroupId) => {
 })
 
 // Lifecycle
-onMounted(async () => {
-  await loadDomains()
+onMounted(() => {
   initializeVisibility()
 })
 
@@ -736,19 +618,7 @@ defineExpose({
   getGroupVisibility: () => ({ ...groupVisibility }),
   getComponentVisibility: () => ({ ...componentVisibility }),
   getViewMode: () => viewMode.value,
-  resetFilters,
-  selectDomainById: (domainId) => {
-    const domain = domains.value.find(d => d.id == domainId)
-    if (domain) {
-      selectDomain(domain)
-    }
-  },
-  selectGroupById: (groupId) => {
-    const group = props.groups.find(g => g.id == groupId)
-    if (group) {
-      selectGroup(group)
-    }
-  }
+  resetFilters
 })
 </script>
 
@@ -1079,80 +949,6 @@ defineExpose({
 
 .sidebar-bottom-padding {
   height: 40px; /* Extra space at bottom for comfortable scrolling */
-}
-
-.domain-item,
-.group-item {
-  padding: 12px;
-  border: 1px solid #e4e7ed;
-  border-radius: 8px;
-  background: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.domain-item:hover,
-.group-item:hover {
-  border-color: #409eff;
-  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.1);
-  transform: translateY(-1px);
-}
-
-.domain-content,
-.group-content {
-  flex: 1;
-}
-
-.domain-header,
-.group-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.domain-color-dot,
-.group-color-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.domain-name,
-.group-name {
-  font-weight: 600;
-  font-size: 14px;
-  color: #303133;
-}
-
-.domain-stats,
-.group-stats {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 4px;
-}
-
-.stat-item {
-  font-size: 12px;
-  color: #909399;
-}
-
-.domain-description,
-.group-description {
-  font-size: 12px;
-  color: #606266;
-  line-height: 1.4;
-}
-
-.domain-arrow,
-.group-arrow {
-  color: #c0c4cc;
-  font-size: 16px;
 }
 
 /* Removed scrollbar toggle styles - now in Dashboard */

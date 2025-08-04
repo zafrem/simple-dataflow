@@ -34,9 +34,12 @@
         :group-visibility="groupVisibility"
         :component-visibility="componentVisibility"
         :view-mode="viewMode"
+        :selected-domain-id="selectedDomainId"
+        :selected-group-id="selectedGroupId"
         @node-selected="onNodeSelected"
         @stats-updated="onStatsUpdated"
-        @group-clicked="onGroupClicked" />
+        @group-clicked="onGroupClicked"
+        @domain-clicked="onDomainClicked" />
       
       <DetailPanel
         :component="selectedComponent"
@@ -90,9 +93,10 @@ const groups = ref([])
 const components = ref([])
 const groupVisibility = ref({})
 const componentVisibility = ref({})
-const viewMode = ref('grouped')
+const viewMode = ref('domains')
 const showGroupManager = ref(false)
 const selectedGroupId = ref(null) // Track selected group for filtering
+const selectedDomainId = ref(null) // Track selected domain for filtering
 
 const searchTerm = ref('')
 const filters = ref({
@@ -191,16 +195,41 @@ const onComponentVisibilityChanged = (visibility) => {
 
 const onViewModeChanged = (mode) => {
   viewMode.value = mode
-  // Clear selected group when switching back to grouped mode
-  if (mode === 'grouped') {
+  
+  // Clear drill-down selections when switching view modes
+  if (mode === 'domains') {
+    selectedDomainId.value = null
+    selectedGroupId.value = null
+  } else if (mode === 'grouped') {
     selectedGroupId.value = null
   }
+  
   // The NetworkGraph will react to this change
 }
 
 const onGroupClicked = (groupId) => {
   selectedGroupId.value = groupId
-  // The sidebar will automatically switch to component mode via watcher
+  
+  // Switch to component view mode to show components within the group
+  viewMode.value = 'components'
+  
+  // Trigger group selection in the sidebar
+  if (groupFilterSidebar.value && groupFilterSidebar.value.selectGroupById) {
+    groupFilterSidebar.value.selectGroupById(groupId)
+  }
+}
+
+const onDomainClicked = (domainId) => {
+  selectedDomainId.value = domainId
+  selectedGroupId.value = null // Clear group selection when selecting domain
+  
+  // Switch to group view mode to show groups within the domain  
+  viewMode.value = 'grouped'
+  
+  // Trigger domain selection in the sidebar
+  if (groupFilterSidebar.value && groupFilterSidebar.value.selectDomainById) {
+    groupFilterSidebar.value.selectDomainById(domainId)
+  }
 }
 
 const onGroupsUpdated = async () => {

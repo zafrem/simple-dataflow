@@ -1,7 +1,7 @@
 <template>
   <div class="groups-view">
     <div class="groups-header">
-      <h2>Component Groups</h2>
+      <h2>Groups</h2>
       <p>Organize and manage logical groupings of system components</p>
       
       <el-row :gutter="16" align="middle" class="actions-row">
@@ -339,11 +339,15 @@ onMounted(() => {
 <style scoped>
 .groups-view {
   padding: 24px;
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .groups-header {
   margin-bottom: 24px;
+  flex-shrink: 0;
 }
 
 .groups-header h2 {
@@ -371,12 +375,44 @@ onMounted(() => {
 
 .groups-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 24px;
+  grid-auto-rows: max-content;
+}
+
+/* Responsive grid columns */
+@media (min-width: 992px) {
+  .groups-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+}
+
+@media (min-width: 1400px) {
+  .groups-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+}
+
+@media (max-width: 767px) {
+  .groups-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 }
 
 .group-card {
   transition: all 0.3s ease;
+  cursor: pointer;
+  border: 1px solid #dcdfe6;
+  border-radius: 8px;
+  height: fit-content;
+  max-width: 100%;
+  width: 100%;
 }
 
 .group-card:hover {
@@ -476,5 +512,39 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+}
+
+/* Custom scrollbar styling */
+.groups-view::-webkit-scrollbar,
+.groups-grid::-webkit-scrollbar {
+  width: 8px;
+}
+
+.groups-view::-webkit-scrollbar-track,
+.groups-grid::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.groups-view::-webkit-scrollbar-thumb,
+.groups-grid::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.groups-view::-webkit-scrollbar-thumb:hover,
+.groups-grid::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Responsive actions row */
+@media (max-width: 768px) {
+  .actions-row .el-col {
+    margin-bottom: 12px;
+  }
+  
+  .stats-info {
+    justify-content: flex-start;
+  }
 }
 </style>

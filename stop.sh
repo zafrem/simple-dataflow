@@ -15,6 +15,10 @@ while [[ $# -gt 0 ]]; do
             SERVICE="$2"
             shift 2
             ;;
+        --native|-n)
+            MODE="native"
+            shift
+            ;;
         --volumes|-v)
             REMOVE_VOLUMES=true
             shift
@@ -24,6 +28,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Options:"
             echo "  --container, -c SERVICE    Stop individual container"
+            echo "  --native, -n               Stop native services"
             echo "  --volumes, -v              Remove volumes when stopping"
             echo "  --help, -h                 Show this help message"
             echo ""
@@ -32,6 +37,7 @@ while [[ $# -gt 0 ]]; do
             echo "Examples:"
             echo "  $0                         Stop all services with docker-compose"
             echo "  $0 -c postgres            Stop only PostgreSQL container"
+            echo "  $0 -n                      Stop native services"
             echo "  $0 -v                      Stop all services and remove volumes"
             echo "  $0 -c backend -v           Stop backend container and remove its volumes"
             exit 0
@@ -55,8 +61,8 @@ else
     echo "⚠️  Homebrew not found, skipping brew services"
 fi
 
-# Check if Docker is running
-if ! docker info > /dev/null 2>&1; then
+# Check if Docker is running (only for Docker modes)
+if [[ "$MODE" != "native" ]] && ! docker info > /dev/null 2>&1; then
     echo "❌ Docker is not running. Nothing to stop."
     exit 0
 fi
@@ -107,6 +113,65 @@ if [[ "$MODE" == "container" ]]; then
             docker rmi "$IMAGE_NAME" 2>/dev/null || true
         fi
     fi
+
+elif [[ "$MODE" == "native" ]]; then
+    # Native mode - stop Node.js processes
+    echo "🏃 Stopping native services..."
+    
+    # Stop backend
+    if [[ -f "backend.pid" ]]; then
+        BACKEND_PID=$(cat backend.pid)
+        if ps -p $BACKEND_PID > /dev/null 2>&1; then
+            echo "🔧 Stopping backend (PID: $BACKEND_PID)..."
+            kill $BACKEND_PID 2>/dev/null || true
+            # Wait a moment then force kill if still running
+            sleep 2
+            if ps -p $BACKEND_PID > /dev/null 2>&1; then
+                kill -9 $BACKEND_PID 2>/dev/null || true
+            fi
+            echo "✅ Backend stopped"
+        else
+            echo "ℹ️  Backend process not running"
+        fi
+        rm -f backend.pid
+    else
+        echo "ℹ️  No backend PID file found"
+    fi
+    
+    # Stop frontend
+    if [[ -f "frontend.pid" ]]; then
+        FRONTEND_PID=$(cat frontend.pid)
+        if ps -p $FRONTEND_PID > /dev/null 2>&1; then
+            echo "🌐 Stopping frontend (PID: $FRONTEND_PID)..."
+            kill $FRONTEND_PID 2>/dev/null || true
+            # Wait a moment then force kill if still running
+            sleep 2
+            if ps -p $FRONTEND_PID > /dev/null 2>&1; then
+                kill -9 $FRONTEND_PID 2>/dev/null || true
+            fi
+            echo "✅ Frontend stopped"
+        else
+            echo "ℹ️  Frontend process not running"
+        fi
+        rm -f frontend.pid
+    else
+        echo "ℹ️  No frontend PID file found"
+    fi
+    
+    # Clean up any remaining Node.js processes that might be related
+    echo "🧹 Cleaning up any remaining processes..."
+    pkill -f "npm run dev" 2>/dev/null || true
+    pkill -f "nodemon" 2>/dev/null || true
+    pkill -f "vite" 2>/dev/null || true
+    
+    # Clean up log files
+    rm -f backend.log frontend.log
+    
+    echo ""
+    echo "✅ Native services stopped successfully!"
+    echo ""
+    echo "💡 PostgreSQL and Redis (via Homebrew) are still running"
+    echo "   To stop them: brew services stop postgresql redis"
 
 else
     # Docker Compose mode (default)

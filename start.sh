@@ -14,11 +14,16 @@ while [[ $# -gt 0 ]]; do
             SERVICE="$2"
             shift 2
             ;;
+        --native|-n)
+            MODE="native"
+            shift
+            ;;
         --help|-h)
             echo "Usage: $0 [OPTIONS]"
             echo ""
             echo "Options:"
             echo "  --container, -c SERVICE    Start individual container for testing"
+            echo "  --native, -n               Start services natively without Docker"
             echo "  --help, -h                 Show this help message"
             echo ""
             echo "Available services: postgres, redis, backend, frontend"
@@ -27,6 +32,7 @@ while [[ $# -gt 0 ]]; do
             echo "  $0                         Start all services with docker-compose"
             echo "  $0 -c postgres            Start only PostgreSQL container"
             echo "  $0 -c backend             Start only backend container"
+            echo "  $0 -n                      Start all services natively"
             exit 0
             ;;
         *)
@@ -48,8 +54,8 @@ else
     echo "⚠️  Homebrew not found, skipping brew services"
 fi
 
-# Check if Docker is running
-if ! docker info > /dev/null 2>&1; then
+# Check if Docker is running (only for Docker modes)
+if [[ "$MODE" != "native" ]] && ! docker info > /dev/null 2>&1; then
     echo "❌ Docker is not running. Please start Docker Desktop and try again."
     exit 1
 fi
@@ -140,6 +146,88 @@ if [[ "$MODE" == "container" ]]; then
     echo ""
     echo "📝 Use 'docker logs -f dataflow-$SERVICE' to view logs"
     echo "🛑 Use './stop.sh -c $SERVICE' to stop this container"
+
+elif [[ "$MODE" == "native" ]]; then
+    # Native mode - run services without Docker
+    echo "🏃 Starting services natively..."
+    
+    # Check if npm/node is available
+    if ! command -v npm >/dev/null 2>&1; then
+        echo "❌ npm not found. Please install Node.js and npm"
+        exit 1
+    fi
+    
+    # Check if dependencies are installed
+    if [[ ! -d "backend/node_modules" ]]; then
+        echo "📦 Installing backend dependencies..."
+        cd backend && npm install && cd ..
+    fi
+    
+    if [[ ! -d "frontend/node_modules" ]]; then
+        echo "📦 Installing frontend dependencies..."
+        cd frontend && npm install && cd ..
+    fi
+    
+    # Create .env files if they don't exist
+    if [[ ! -f "backend/.env" ]]; then
+        echo "📝 Creating backend .env file..."
+        cat > backend/.env << EOF
+NODE_ENV=development
+PORT=3001
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=dataflow_db
+DB_USER=dataflow
+DB_PASSWORD=dataflow_pass
+REDIS_HOST=localhost
+REDIS_PORT=6379
+JWT_SECRET=your-secret-key-change-in-production
+EOF
+    fi
+    
+    if [[ ! -f "frontend/.env" ]]; then
+        echo "📝 Creating frontend .env file..."
+        cat > frontend/.env << EOF
+VITE_API_URL=http://localhost:3001/api
+VITE_SOCKET_URL=http://localhost:3001
+EOF
+    fi
+    
+    # Start backend in background
+    echo "🔧 Starting backend on port 3001..."
+    cd backend
+    npm run dev > ../backend.log 2>&1 &
+    BACKEND_PID=$!
+    echo $BACKEND_PID > ../backend.pid
+    cd ..
+    
+    # Start frontend in background
+    echo "🌐 Starting frontend on port 3000..."
+    cd frontend
+    npm run dev > ../frontend.log 2>&1 &
+    FRONTEND_PID=$!
+    echo $FRONTEND_PID > ../frontend.pid
+    cd ..
+    
+    # Wait for services to start
+    echo "⏳ Waiting for services to be ready..."
+    sleep 5
+    
+    echo ""
+    echo "✅ Development environment is ready!"
+    echo ""
+    echo "🌐 Frontend: http://localhost:3000"
+    echo "🔧 Backend API: http://localhost:3001"
+    echo "🗄️  PostgreSQL: localhost:5432 (via Homebrew)"
+    echo "🔴 Redis: localhost:6379 (via Homebrew)"
+    echo ""
+    echo "📝 Backend logs: tail -f backend.log"
+    echo "📝 Frontend logs: tail -f frontend.log"
+    echo "🛑 Use './stop.sh -n' to stop native services"
+    echo ""
+    echo "💡 Make sure PostgreSQL and Redis are running via Homebrew:"
+    echo "   brew services start postgresql"
+    echo "   brew services start redis"
 
 else
     # Docker Compose mode (default)

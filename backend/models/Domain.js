@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
-const ComponentGroup = sequelize.define('ComponentGroup', {
+const Domain = sequelize.define('Domain', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -10,25 +10,21 @@ const ComponentGroup = sequelize.define('ComponentGroup', {
   name: {
     type: DataTypes.STRING,
     allowNull: false,
+    unique: true,
     validate: {
       notEmpty: true,
-      len: [1, 255]
+      len: [1, 100]
     }
   },
   description: {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  groupType: {
-    type: DataTypes.ENUM('LOGICAL', 'PHYSICAL', 'FUNCTIONAL', 'SERVICE'),
-    allowNull: false,
-    defaultValue: 'LOGICAL'
-  },
-  domain: {
+  color: {
     type: DataTypes.STRING,
     allowNull: true,
     validate: {
-      len: [0, 100]
+      is: /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/i
     }
   },
   metadata: {
@@ -40,38 +36,17 @@ const ComponentGroup = sequelize.define('ComponentGroup', {
     type: DataTypes.BOOLEAN,
     defaultValue: true
   },
-  color: {
-    type: DataTypes.STRING,
-    allowNull: true,
-    validate: {
-      is: /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/i // Hex color validation
-    }
-  },
-  position: {
+  pipelines: {
     type: DataTypes.JSONB,
     allowNull: true,
-    defaultValue: { x: 0, y: 0 }
-  },
-  domainId: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    references: {
-      model: 'domains',
-      key: 'id'
-    }
+    defaultValue: []
   }
 }, {
-  tableName: 'component_groups',
+  tableName: 'domains',
   timestamps: true,
   indexes: [
     {
       fields: ['name']
-    },
-    {
-      fields: ['groupType']
-    },
-    {
-      fields: ['domain']
     },
     {
       fields: ['isActive']
@@ -79,4 +54,4 @@ const ComponentGroup = sequelize.define('ComponentGroup', {
   ]
 });
 
-module.exports = ComponentGroup;
+module.exports = Domain;

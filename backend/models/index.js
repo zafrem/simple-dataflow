@@ -4,6 +4,7 @@ const Connector = require('./Connector');
 const Connection = require('./Connection');
 const ComponentGroup = require('./ComponentGroup');
 const ComponentGroupMembership = require('./ComponentGroupMembership');
+const Domain = require('./Domain');
 
 // Component-Connector relationships
 Component.belongsTo(Connector, { foreignKey: 'connectorId', as: 'connector' });
@@ -38,6 +39,13 @@ ComponentGroupMembership.belongsTo(ComponentGroup, { foreignKey: 'groupId', as: 
 Component.hasMany(ComponentGroupMembership, { foreignKey: 'componentId', as: 'memberships' });
 ComponentGroup.hasMany(ComponentGroupMembership, { foreignKey: 'groupId', as: 'memberships' });
 
+// Domain relationships
+Domain.hasMany(ComponentGroup, { foreignKey: 'domainId', as: 'groups' });
+ComponentGroup.belongsTo(Domain, { foreignKey: 'domainId', as: 'domainInfo' });
+
+Domain.hasMany(Component, { foreignKey: 'domainId', as: 'components' });
+Component.belongsTo(Domain, { foreignKey: 'domainId', as: 'domainInfo' });
+
 const initializeDatabase = async () => {
   try {
     await sequelize.authenticate();
@@ -58,5 +66,6 @@ module.exports = {
   Connection,
   ComponentGroup,
   ComponentGroupMembership,
+  Domain,
   initializeDatabase
 };

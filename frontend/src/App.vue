@@ -31,6 +31,10 @@
               <el-icon><Collection /></el-icon>
               Groups
             </el-menu-item>
+            <el-menu-item index="/domains">
+              <el-icon><Grid /></el-icon>
+              Domains
+            </el-menu-item>
             <el-menu-item index="/settings">
               <el-icon><Setting /></el-icon>
               Settings
@@ -73,7 +77,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElNotification } from 'element-plus'
-import { Connection, TrendCharts, DataAnalysis, Collection, Setting } from '@element-plus/icons-vue'
+import { Connection, TrendCharts, DataAnalysis, Collection, Grid, Setting } from '@element-plus/icons-vue'
 import { useSocketStore } from './stores/socket'
 import { useSystemStore } from './stores/system'
 
