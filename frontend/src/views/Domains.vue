@@ -57,8 +57,9 @@
                 <el-button type="text" :icon="MoreFilled" />
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item :command="{ action: 'edit', domain }">Edit</el-dropdown-item>
-                    <el-dropdown-item :command="{ action: 'delete', domain }" divided>Delete</el-dropdown-item>
+                    <el-dropdown-item :command="{ action: 'view-board', domain }">View Board</el-dropdown-item>
+                    <el-dropdown-item :command="{ action: 'edit', domain }" divided>Edit</el-dropdown-item>
+                    <el-dropdown-item :command="{ action: 'delete', domain }">Delete</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -152,6 +153,14 @@
                   {{ group.groupType }}
                 </el-tag>
               </div>
+              <el-dropdown @command="handleGroupActionInDomain" @click.stop>
+                <el-button type="text" :icon="MoreFilled" />
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item :command="{ action: 'view-board', group }">View Board</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </div>
           </template>
 
@@ -412,8 +421,11 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { Plus, MoreFilled, Delete } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+
+const router = useRouter()
 
 const currentView = ref('domains') // 'domains', 'groups', 'components'
 const selectedDomain = ref(null)
@@ -502,6 +514,35 @@ const getComponentTypeColor = (type) => {
     'PIPES': ''
   }
   return colors[type] || 'info'
+}
+
+// Navigation function
+const navigateToDashboard = async ({ domainId, domainName, groupId, groupName }) => {
+  try {
+    // Store the filtering parameters in sessionStorage so Dashboard can pick them up
+    const dashboardState = {
+      selectedDomainId: domainId || null,
+      selectedGroupId: groupId || null,
+      viewMode: domainId ? (groupId ? 'components' : 'grouped') : 'domains',
+      filterContext: {
+        domainName: domainName || null,
+        groupName: groupName || null
+      }
+    }
+    
+    sessionStorage.setItem('dashboardState', JSON.stringify(dashboardState))
+    
+    // Navigate to dashboard
+    await router.push('/')
+    
+    // Show success message with context
+    const context = groupName ? `group "${groupName}"` : `domain "${domainName}"`
+    ElMessage.success(`Switched to Board view for ${context}`)
+    
+  } catch (error) {
+    console.error('Error navigating to dashboard:', error)
+    ElMessage.error('Failed to navigate to dashboard')
+  }
 }
 
 const loadDomains = async () => {
@@ -851,6 +892,11 @@ const handlePipelineAction = async ({ action, pipeline }) => {
 
 const handleDomainAction = async ({ action, domain }) => {
   switch (action) {
+    case 'view-board':
+      // Navigate to Board with domain filtering
+      await navigateToDashboard({ domainId: domain.id, domainName: domain.name })
+      break
+      
     case 'edit':
       editingDomain.value = domain
       domainForm.value = {
@@ -890,6 +936,20 @@ const handleDomainAction = async ({ action, domain }) => {
           ElMessage.error('Failed to delete domain')
         }
       }
+      break
+  }
+}
+
+const handleGroupActionInDomain = async ({ action, group }) => {
+  switch (action) {
+    case 'view-board':
+      // Navigate to Board with group filtering to show components in this group
+      // Only pass group info to focus on the group's components, not domain's groups
+      await navigateToDashboard({ 
+        groupId: group.id, 
+        groupName: group.name
+        // Note: Don't pass domainId here as we want to focus on this specific group's components
+      })
       break
   }
 }

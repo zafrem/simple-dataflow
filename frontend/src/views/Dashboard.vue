@@ -259,6 +259,42 @@ onMounted(async () => {
     loadGroups(),
     loadComponents()
   ])
+  
+  // Check for navigation state from Domains/Groups views
+  const dashboardState = sessionStorage.getItem('dashboardState')
+  if (dashboardState) {
+    try {
+      const state = JSON.parse(dashboardState)
+      
+      // Apply the filtering state
+      if (state.selectedDomainId) {
+        selectedDomainId.value = state.selectedDomainId
+      }
+      if (state.selectedGroupId) {
+        selectedGroupId.value = state.selectedGroupId
+      }
+      if (state.viewMode) {
+        viewMode.value = state.viewMode
+      }
+      
+      // Clear the state after using it
+      sessionStorage.removeItem('dashboardState')
+      
+      // Trigger filtering in the sidebar
+      setTimeout(() => {
+        if (state.selectedDomainId && groupFilterSidebar.value && groupFilterSidebar.value.selectDomainById) {
+          groupFilterSidebar.value.selectDomainById(state.selectedDomainId)
+        }
+        if (state.selectedGroupId && groupFilterSidebar.value && groupFilterSidebar.value.selectGroupById) {
+          groupFilterSidebar.value.selectGroupById(state.selectedGroupId)
+        }
+      }, 100)
+      
+    } catch (error) {
+      console.error('Error parsing dashboard state:', error)
+      sessionStorage.removeItem('dashboardState')
+    }
+  }
   // Set up real-time event listeners
   socketStore.on('component:created', (component) => {
     ElMessage.success(`New component discovered: ${component.name}`)

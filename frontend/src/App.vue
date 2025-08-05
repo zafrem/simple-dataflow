@@ -15,9 +15,21 @@
             mode="horizontal"
             router
             style="border: none; background: transparent;">
+            <el-menu-item index="/domains">
+              <el-icon><Grid /></el-icon>
+              Domains
+            </el-menu-item>
+            <el-menu-item index="/groups">
+              <el-icon><Collection /></el-icon>
+              Groups
+            </el-menu-item>
+            <el-menu-item index="/data">
+              <el-icon><DataAnalysis /></el-icon>
+              Data View
+            </el-menu-item>
             <el-menu-item index="/">
               <el-icon><Connection /></el-icon>
-              Dashboard
+              Board
             </el-menu-item>
             <el-menu-item index="/diagram">
               <el-icon><TrendCharts /></el-icon>
@@ -26,18 +38,6 @@
             <el-menu-item index="/anomaly-log">
               <el-icon><Warning /></el-icon>
               Anomaly Detection Log
-            </el-menu-item>
-            <el-menu-item index="/data">
-              <el-icon><DataAnalysis /></el-icon>
-              Data View
-            </el-menu-item>
-            <el-menu-item index="/groups">
-              <el-icon><Collection /></el-icon>
-              Groups
-            </el-menu-item>
-            <el-menu-item index="/domains">
-              <el-icon><Grid /></el-icon>
-              Domains
             </el-menu-item>
             <el-menu-item index="/settings">
               <el-icon><Setting /></el-icon>
