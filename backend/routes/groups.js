@@ -116,14 +116,47 @@ router.post('/', async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!name) {
+    if (!name || name.trim().length === 0) {
       return res.status(400).json({ error: 'Group name is required' });
+    }
+
+    // Check for duplicate group name within the same domain (case-insensitive)
+    const whereClause = { 
+      name: { [Op.iLike]: name.trim() },
+      isActive: true
+    };
+
+    // If domain or domainId is specified, check within that domain
+    if (domainId) {
+      whereClause.domainId = domainId;
+    } else if (domain) {
+      whereClause.domain = domain;
+    }
+
+    const existingGroup = await ComponentGroup.findOne({ where: whereClause });
+    
+    if (existingGroup) {
+      return res.status(409).json({ 
+        error: 'Group with this name already exists in the specified domain',
+        details: {
+          field: 'name',
+          value: name.trim(),
+          domain: domain || 'domain_id_' + domainId,
+          existingGroup: {
+            id: existingGroup.id,
+            name: existingGroup.name,
+            groupType: existingGroup.groupType,
+            domain: existingGroup.domain,
+            domainId: existingGroup.domainId
+          }
+        }
+      });
     }
 
     // Create the group
     const group = await ComponentGroup.create({
-      name,
-      description,
+      name: name.trim(),
+      description: description?.trim(),
       groupType,
       domain,
       domainId,

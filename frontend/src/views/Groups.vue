@@ -150,6 +150,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { Plus, MoreFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { submitFormWithDuplicateHandling, sanitizeFormData } from '../utils/validationUtils'
 
 const groups = ref([])
 const loading = ref(false)
@@ -247,37 +248,28 @@ const saveGroup = async () => {
   if (!valid) return
 
   saving.value = true
-  try {
-    const url = editingGroup.value 
-      ? `http://localhost:3001/api/groups/${editingGroup.value.id}`
-      : 'http://localhost:3001/api/groups'
-    
-    const method = editingGroup.value ? 'PUT' : 'POST'
-    
-    const response = await fetch(url, {
-      method,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(groupForm.value)
-    })
-
-    const data = await response.json()
-    
-    if (response.ok) {
+  
+  const url = editingGroup.value 
+    ? `http://localhost:3001/api/groups/${editingGroup.value.id}`
+    : 'http://localhost:3001/api/groups'
+  
+  const method = editingGroup.value ? 'PUT' : 'POST'
+  const sanitizedData = sanitizeFormData(groupForm.value)
+  
+  const success = await submitFormWithDuplicateHandling({
+    url,
+    method,
+    data: sanitizedData,
+    entityType: 'group',
+    onSuccess: async () => {
       ElMessage.success(editingGroup.value ? 'Group updated successfully' : 'Group created successfully')
       showCreateDialog.value = false
       resetForm()
       await loadGroups()
-    } else {
-      throw new Error(data.error || 'Failed to save group')
     }
-  } catch (error) {
-    console.error('Error saving group:', error)
-    ElMessage.error('Failed to save group')
-  } finally {
-    saving.value = false
-  }
+  })
+  
+  saving.value = false
 }
 
 const handleGroupAction = async ({ action, group }) => {

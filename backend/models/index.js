@@ -5,6 +5,7 @@ const Connection = require('./Connection');
 const ComponentGroup = require('./ComponentGroup');
 const ComponentGroupMembership = require('./ComponentGroupMembership');
 const Domain = require('./Domain');
+const AnomalyLog = require('./AnomalyLog');
 
 // Component-Connector relationships
 Component.belongsTo(Connector, { foreignKey: 'connectorId', as: 'connector' });
@@ -67,5 +68,6 @@ module.exports = {
   ComponentGroup,
   ComponentGroupMembership,
   Domain,
+  AnomalyLog,
   initializeDatabase
 };

@@ -396,6 +396,12 @@ export const layoutOptions = {
     tilingPaddingHorizontal: 10
   },
   
+  preset: {
+    name: 'preset',
+    fit: true,
+    padding: 30
+  },
+  
   circle: {
     name: 'circle',
     animate: false,
@@ -508,18 +514,35 @@ export const layoutOptions = {
   }
 }
 
-export const applyLayout = (cy, layoutName = 'cose') => {
+export const applyLayout = (cy, layoutName = 'cose', savedPositions = null) => {
   const layoutConfig = layoutOptions[layoutName] || layoutOptions.cose
   
-  // Handle custom preset layouts
-  if (layoutConfig.name === 'preset' && layoutConfig.positions) {
-    const positions = layoutConfig.positions(cy)
-    const layout = cy.layout({
-      ...layoutConfig,
-      positions: positions
+  // Handle preset layout with saved positions
+  if (layoutConfig.name === 'preset' && savedPositions) {
+    const positions = {}
+    
+    // Apply saved positions for existing nodes
+    cy.nodes().forEach(node => {
+      const nodeId = node.id()
+      if (savedPositions[nodeId]) {
+        positions[nodeId] = savedPositions[nodeId]
+      }
     })
-    layout.run()
-    return layout
+    
+    // Only use preset if we have some saved positions
+    if (Object.keys(positions).length > 0) {
+      const layout = cy.layout({
+        ...layoutConfig,
+        positions: positions
+      })
+      layout.run()
+      return layout
+    } else {
+      // Fall back to cose layout if no saved positions
+      const fallbackLayout = cy.layout(layoutOptions.cose)
+      fallbackLayout.run()
+      return fallbackLayout
+    }
   }
   
   const layoutInstance = cy.layout(layoutConfig)

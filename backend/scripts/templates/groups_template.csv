@@ -1,0 +1,6 @@
+name,description,group_type,domain,domain_id,color,position,metadata
+Payment Services,Payment processing components,FUNCTIONAL,Finance Domain,,#ff6b6b,"{""x"": 100, ""y"": 150}","{""service_level"": ""critical""}"
+User Management,User authentication and authorization,LOGICAL,Operations Domain,,#45b7d1,"{""x"": 200, ""y"": 100}","{""security_level"": ""high""}"
+Data Analytics,Analytics and reporting components,SERVICE,Marketing Domain,,#4ecdc4,"{""x"": 300, ""y"": 200}","{""data_retention"": ""2_years""}"
+HR Systems,Human resources applications,PHYSICAL,HR Domain,,#96ceb4,"{""x"": 150, ""y"": 300}","{""compliance"": ""gdpr""}"
+Monitoring Stack,System monitoring and alerting,LOGICAL,IT Infrastructure,,#feca57,"{""x"": 50, ""y"": 50}","{""alert_level"": ""critical""}"

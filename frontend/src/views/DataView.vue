@@ -43,6 +43,14 @@
           </el-table-column>
           <el-table-column prop="domain" label="Domain" width="120" sortable />
           <el-table-column prop="source" label="Source" width="120" sortable />
+          <el-table-column prop="team" label="Team" width="120" sortable>
+            <template #default="{ row }">
+              <el-tag v-if="row.team" type="success" size="small">
+                {{ row.team }}
+              </el-tag>
+              <span v-else class="text-placeholder">N/A</span>
+            </template>
+          </el-table-column>
           <el-table-column prop="isActive" label="Active" width="80" sortable>
             <template #default="{ row }">
               <el-tag :type="row.isActive ? 'success' : 'danger'" size="small">
@@ -258,7 +266,8 @@ const filteredComponents = computed(() => {
     item.name?.toLowerCase().includes(search) ||
     item.tag?.toLowerCase().includes(search) ||
     item.type?.toLowerCase().includes(search) ||
-    item.domain?.toLowerCase().includes(search)
+    item.domain?.toLowerCase().includes(search) ||
+    item.team?.toLowerCase().includes(search)
   )
 })
 

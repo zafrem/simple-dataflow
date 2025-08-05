@@ -71,6 +71,13 @@ const Component = sequelize.define('Component', {
       model: 'domains',
       key: 'id'
     }
+  },
+  team: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    validate: {
+      len: [0, 100]
+    }
   }
 }, {
   tableName: 'components',
@@ -90,6 +97,9 @@ const Component = sequelize.define('Component', {
     },
     {
       fields: ['isActive']
+    },
+    {
+      fields: ['team']
     }
   ],
   hooks: {

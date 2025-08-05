@@ -1,0 +1,7 @@
+message,importance,category,source,retention_days,details,tags,timestamp
+Payment gateway response time exceeded threshold,high,anomaly,monitoring-system,90,"{""threshold"": ""2000ms"", ""actual"": ""5500ms"", ""endpoint"": ""/api/payments""}","[""performance"", ""payment"", ""api""]",2025-08-05T10:30:00Z
+New component discovered: Customer Analytics API,medium,object_addition,auto-discovery,60,"{""component_type"": ""API"", ""domain"": ""Marketing"", ""endpoint"": ""https://analytics.internal/api/v1""}","[""discovery"", ""api"", ""analytics""]",2025-08-05T09:15:00Z
+Database connection pool exhausted,critical,system,database-monitor,180,"{""pool_size"": ""50"", ""active_connections"": ""50"", ""database"": ""user_db""}","[""database"", ""critical"", ""performance""]",2025-08-05T11:45:00Z
+Unauthorized API access attempt blocked,high,security,security-gateway,365,"{""source_ip"": ""192.168.1.100"", ""endpoint"": ""/api/admin"", ""attempts"": ""5""}","[""security"", ""unauthorized"", ""api""]",2025-08-05T08:20:00Z
+System backup completed successfully,info,system,backup-service,7,"{""backup_size"": ""2.5GB"", ""duration"": ""45min"", ""status"": ""success""}","[""backup"", ""system"", ""maintenance""]",2025-08-05T02:00:00Z
+High memory usage detected on analytics server,medium,performance,monitoring-system,30,"{""memory_usage"": ""85%"", ""threshold"": ""80%"", ""server"": ""analytics-01""}","[""memory"", ""performance"", ""server""]",2025-08-05T14:30:00Z

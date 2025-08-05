@@ -23,6 +23,10 @@
               <el-icon><TrendCharts /></el-icon>
               Data Diagram
             </el-menu-item>
+            <el-menu-item index="/anomaly-log">
+              <el-icon><Warning /></el-icon>
+              Anomaly Detection Log
+            </el-menu-item>
             <el-menu-item index="/data">
               <el-icon><DataAnalysis /></el-icon>
               Data View
@@ -77,7 +81,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElNotification } from 'element-plus'
-import { Connection, TrendCharts, DataAnalysis, Collection, Grid, Setting } from '@element-plus/icons-vue'
+import { Connection, TrendCharts, DataAnalysis, Collection, Grid, Setting, Warning } from '@element-plus/icons-vue'
 import { useSocketStore } from './stores/socket'
 import { useSystemStore } from './stores/system'
 
@@ -151,6 +155,7 @@ onMounted(async () => {
       `${component.name} (${component.type}) has been discovered`,
       'success'
     )
+    // This will also automatically create an anomaly log via the backend
   })
   
   socketStore.on('sync:completed', (data) => {

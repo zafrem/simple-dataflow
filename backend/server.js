@@ -14,6 +14,7 @@ const connectionRoutes = require('./routes/connections');
 const domainRoutes = require('./routes/domainsNew');
 const connectorRoutes = require('./routes/connectors');
 const groupRoutes = require('./routes/groups');
+const anomalyLogRoutes = require('./routes/anomalyLogs');
 const { router: syncRoutes } = require('./routes/sync');
 
 const app = express();
@@ -54,6 +55,7 @@ app.use('/api/connections', connectionRoutes);
 app.use('/api/domains', domainRoutes);
 app.use('/api/connectors', connectorRoutes);
 app.use('/api/groups', groupRoutes);
+app.use('/api/anomaly-logs', anomalyLogRoutes);
 app.use('/api/sync', syncRoutes);
 
 app.get('/api/health', async (req, res) => {

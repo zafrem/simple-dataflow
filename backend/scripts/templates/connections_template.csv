@@ -1,0 +1,9 @@
+source_id,target_id,source_tag,target_tag,domain,connection_type,strength,metadata
+,,operations_auth_service_api,operations_user_db,Operations Domain,direct,1.0,"{""query_type"": ""read"", ""frequency"": ""high""}"
+,,finance_payment_gateway_api,operations_auth_service_api,Finance Domain,direct,0.8,"{""auth_required"": true, ""timeout"": ""30s""}"
+,,marketing_analytics_dashboard_app,analytics_etl_pipes,Marketing Domain,direct,0.9,"{""data_refresh"": ""hourly""}"
+,,analytics_etl_pipes,operations_user_db,Marketing Domain,direct,0.7,"{""query_type"": ""batch_read""}"
+,,hr_portal_app,operations_auth_service_api,HR Domain,direct,0.9,"{""sso_enabled"": true}"
+,,infrastructure_notification_api,finance_payment_gateway_api,IT Infrastructure,direct,0.6,"{""alert_type"": ""payment_failure""}"
+,,infrastructure_log_storage,operations_auth_service_api,IT Infrastructure,direct,0.5,"{""log_level"": ""info""}"
+,,infrastructure_log_storage,finance_payment_gateway_api,IT Infrastructure,direct,0.8,"{""log_level"": ""error""}"

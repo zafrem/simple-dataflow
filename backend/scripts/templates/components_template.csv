@@ -1,0 +1,9 @@
+name,type,tag,description,domain,domain_id,source,team,metadata
+Payment Gateway,API,finance_payment_gateway_api,Handles payment processing,Finance Domain,,csv-import,Finance Team,"{""version"": ""2.1"", ""uptime"": ""99.9%""}"
+User Database,DB,operations_user_db,Main user information database,Operations Domain,,csv-import,DevOps Team,"{""engine"": ""postgresql"", ""size"": ""500GB""}"
+Analytics Dashboard,APP,marketing_analytics_dashboard_app,Marketing analytics web application,Marketing Domain,,csv-import,Marketing Team,"{""framework"": ""react"", ""users"": ""50""}"
+HR Portal,APP,hr_portal_app,Employee self-service portal,HR Domain,,csv-import,HR Team,"{""framework"": ""vue"", ""modules"": [""payroll"", ""benefits""]}"}"
+Log Storage,STORAGE,infrastructure_log_storage,Centralized log storage system,IT Infrastructure,,csv-import,DevOps Team,"{""type"": ""elasticsearch"", ""retention"": ""90_days""}"
+Data Pipeline,PIPES,analytics_etl_pipes,ETL pipeline for data processing,Marketing Domain,,csv-import,Data Team,"{""schedule"": ""daily"", ""tool"": ""airflow""}"
+Auth Service,API,operations_auth_service_api,Authentication and authorization service,Operations Domain,,csv-import,Security Team,"{""protocol"": ""oauth2"", ""tokens"": ""jwt""}"
+Notification Service,API,infrastructure_notification_api,System notification service,IT Infrastructure,,csv-import,Platform Team,"{""channels"": [""email"", ""slack"", ""sms""]}"}

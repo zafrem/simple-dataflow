@@ -1,5 +1,5 @@
 const express = require('express');
-const { Component, Connection, Connector } = require('../models');
+const { Component, Connection, Connector, AnomalyLog } = require('../models');
 const { buildConnections } = require('../utils/connectionBuilder');
 const { validateTag, generateUniqueTag, extractDomainFromTag } = require('../utils/tagExtractor');
 const router = express.Router();
@@ -10,6 +10,7 @@ router.get('/', async (req, res) => {
       type,
       domain,
       source,
+      team,
       search,
       include,
       page = 1,
@@ -22,6 +23,7 @@ router.get('/', async (req, res) => {
     if (type) where.type = type;
     if (domain) where.domain = domain;
     if (source) where.source = source;
+    if (team) where.team = team;
     if (search) {
       where[require('sequelize').Op.or] = [
         { name: { [require('sequelize').Op.iLike]: `%${search}%` } },
@@ -102,7 +104,7 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { name, tag, type, source = 'manual', description, metadata } = req.body;
+    const { name, tag, type, source = 'manual', description, metadata, team } = req.body;
 
     if (!name || !type) {
       return res.status(400).json({ error: 'Name and type are required' });
@@ -123,9 +125,47 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Invalid tag format. Must end with _db, _api, _app, _storage, or _pipes' });
     }
 
-    const existingComponent = await Component.findOne({ where: { tag: finalTag } });
-    if (existingComponent) {
-      return res.status(409).json({ error: 'Component with this tag already exists' });
+    // Check for duplicate tag
+    const existingComponentByTag = await Component.findOne({ where: { tag: finalTag } });
+    if (existingComponentByTag) {
+      return res.status(409).json({ 
+        error: 'Component with this tag already exists',
+        details: {
+          field: 'tag',
+          value: finalTag,
+          existingComponent: {
+            id: existingComponentByTag.id,
+            name: existingComponentByTag.name,
+            type: existingComponentByTag.type
+          }
+        }
+      });
+    }
+
+    // Check for duplicate name within the same type and domain
+    const existingComponentByName = await Component.findOne({ 
+      where: { 
+        name: name.trim(),
+        type: type,
+        domain: extractDomainFromTag(finalTag),
+        isActive: true
+      } 
+    });
+    if (existingComponentByName) {
+      return res.status(409).json({ 
+        error: 'Component with this name already exists in the same domain and type',
+        details: {
+          field: 'name',
+          value: name.trim(),
+          domain: extractDomainFromTag(finalTag),
+          type: type,
+          existingComponent: {
+            id: existingComponentByName.id,
+            name: existingComponentByName.name,
+            tag: existingComponentByName.tag
+          }
+        }
+      });
     }
 
     const domain = extractDomainFromTag(finalTag);
@@ -137,7 +177,8 @@ router.post('/', async (req, res) => {
       source,
       domain,
       description,
-      metadata: metadata || {}
+      metadata: metadata || {},
+      team
     });
 
     await buildConnections(component.id);
@@ -145,6 +186,24 @@ router.post('/', async (req, res) => {
     const io = req.app.get('io');
     if (io) {
       io.emit('component:created', component);
+    }
+
+    // Create anomaly log for new component
+    try {
+      await AnomalyLog.createObjectAdditionLog(
+        type,
+        name,
+        {
+          componentId: component.id,
+          tag: finalTag,
+          domain: domain,
+          source: source,
+          createdAt: component.createdAt
+        }
+      );
+    } catch (logError) {
+      console.error('Error creating anomaly log for component creation:', logError);
+      // Don't fail the component creation if logging fails
     }
 
     res.status(201).json(component);
@@ -160,7 +219,7 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const { name, description, metadata, isActive } = req.body;
+    const { name, description, metadata, isActive, team } = req.body;
     
     const component = await Component.findByPk(req.params.id);
     if (!component) {
@@ -172,6 +231,7 @@ router.put('/:id', async (req, res) => {
     if (description !== undefined) updates.description = description;
     if (metadata !== undefined) updates.metadata = metadata;
     if (isActive !== undefined) updates.isActive = isActive;
+    if (team !== undefined) updates.team = team;
 
     await component.update(updates);
 

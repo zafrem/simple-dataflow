@@ -104,9 +104,37 @@ router.post('/', async (req, res) => {
   try {
     const { name, description, color, pipelines, metadata } = req.body;
     
+    // Validate required fields
+    if (!name || name.trim().length === 0) {
+      return res.status(400).json({ error: 'Domain name is required' });
+    }
+
+    // Check for duplicate domain name (case-insensitive)
+    const existingDomain = await Domain.findOne({ 
+      where: { 
+        name: { [require('sequelize').Op.iLike]: name.trim() },
+        isActive: true
+      } 
+    });
+    
+    if (existingDomain) {
+      return res.status(409).json({ 
+        error: 'Domain with this name already exists',
+        details: {
+          field: 'name',
+          value: name.trim(),
+          existingDomain: {
+            id: existingDomain.id,
+            name: existingDomain.name,
+            description: existingDomain.description
+          }
+        }
+      });
+    }
+
     const domain = await Domain.create({
-      name,
-      description,
+      name: name.trim(),
+      description: description?.trim(),
       color,
       pipelines: pipelines || [],
       metadata: metadata || {}
@@ -115,7 +143,13 @@ router.post('/', async (req, res) => {
     res.status(201).json(domain);
   } catch (error) {
     if (error.name === 'SequelizeUniqueConstraintError') {
-      return res.status(400).json({ error: 'Domain name already exists' });
+      return res.status(409).json({ 
+        error: 'Domain name already exists',
+        details: {
+          field: 'name',
+          constraint: error.parent?.constraint || 'unique_constraint'
+        }
+      });
     }
     console.error('Error creating domain:', error);
     res.status(500).json({ error: 'Internal server error' });

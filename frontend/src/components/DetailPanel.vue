@@ -35,6 +35,11 @@
             <el-tag size="small">{{ formatSourceName(component.source) }}</el-tag>
           </div>
           
+          <div class="info-item" v-if="component.team">
+            <span class="label">Team:</span>
+            <el-tag size="small" type="success">{{ component.team }}</el-tag>
+          </div>
+          
           <div class="info-item">
             <span class="label">Status:</span>
             <el-tag 

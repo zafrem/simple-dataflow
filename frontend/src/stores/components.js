@@ -17,6 +17,7 @@ export const useComponentStore = defineStore('components', {
       type: [],
       domain: [],
       source: [],
+      team: [],
       search: '',
       includeIsolated: true
     },
@@ -32,7 +33,9 @@ export const useComponentStore = defineStore('components', {
     },
     // Layout state persistence
     currentLayout: 'cose',
-    layoutSettings: {}
+    layoutSettings: {},
+    // Node position persistence
+    savedPositions: {}
   }),
 
   getters: {
@@ -173,6 +176,7 @@ export const useComponentStore = defineStore('components', {
         type: [],
         domain: [],
         source: [],
+        team: [],
         search: '',
         includeIsolated: true
       }
@@ -199,6 +203,10 @@ export const useComponentStore = defineStore('components', {
       
       if (this.filters.source.length > 0) {
         params.source = this.filters.source.join(',')
+      }
+      
+      if (this.filters.team.length > 0) {
+        params.team = this.filters.team.join(',')
       }
       
       if (this.filters.search) {
@@ -230,6 +238,44 @@ export const useComponentStore = defineStore('components', {
       if (savedLayout) {
         this.currentLayout = savedLayout
       }
+      
+      // Load saved positions from localStorage
+      const savedPositions = localStorage.getItem('dataflow-positions')
+      if (savedPositions) {
+        try {
+          this.savedPositions = JSON.parse(savedPositions)
+        } catch (error) {
+          console.warn('Failed to parse saved positions:', error)
+          this.savedPositions = {}
+        }
+      }
+    },
+
+    // Position saving and loading actions
+    saveNodePositions(cy) {
+      if (!cy) return
+      
+      const positions = {}
+      cy.nodes().forEach(node => {
+        const nodeId = node.id()
+        const position = node.position()
+        positions[nodeId] = {
+          x: position.x,
+          y: position.y
+        }
+      })
+      
+      this.savedPositions = positions
+      localStorage.setItem('dataflow-positions', JSON.stringify(positions))
+    },
+
+    getSavedPositions() {
+      return this.savedPositions
+    },
+
+    clearSavedPositions() {
+      this.savedPositions = {}
+      localStorage.removeItem('dataflow-positions')
     }
   },
 
@@ -261,6 +307,10 @@ export const useComponentStore = defineStore('components', {
         filtered = filtered.filter(c => state.filters.source.includes(c.source))
       }
 
+      if (state.filters.team.length > 0) {
+        filtered = filtered.filter(c => state.filters.team.includes(c.team))
+      }
+
       if (state.filters.search) {
         const search = state.filters.search.toLowerCase()
         filtered = filtered.filter(c => 
@@ -288,6 +338,16 @@ export const useComponentStore = defineStore('components', {
         sources.add(component.source)
       })
       return Array.from(sources).sort()
+    },
+
+    uniqueTeams: (state) => {
+      const teams = new Set()
+      state.components.forEach(component => {
+        if (component.team) {
+          teams.add(component.team)
+        }
+      })
+      return Array.from(teams).sort()
     }
   }
 })

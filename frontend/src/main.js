@@ -8,6 +8,7 @@ import './style.css'
 import App from './App.vue'
 import Dashboard from './views/Dashboard.vue'
 import DataDiagram from './views/DataDiagram.vue'
+import AnomalyLog from './views/AnomalyLog.vue'
 import DataView from './views/DataView.vue'
 import Groups from './views/Groups.vue'
 import Domains from './views/Domains.vue'
@@ -16,6 +17,7 @@ import Settings from './views/Settings.vue'
 const routes = [
   { path: '/', name: 'Dashboard', component: Dashboard },
   { path: '/diagram', name: 'DataDiagram', component: DataDiagram },
+  { path: '/anomaly-log', name: 'AnomalyLog', component: AnomalyLog },
   { path: '/data', name: 'DataView', component: DataView },
   { path: '/groups', name: 'Groups', component: Groups },
   { path: '/domains', name: 'Domains', component: Domains },

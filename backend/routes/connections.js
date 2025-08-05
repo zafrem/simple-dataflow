@@ -543,7 +543,27 @@ router.post('/', async (req, res) => {
 
     if (existingConnection) {
       return res.status(409).json({
-        error: 'Connection already exists between these components'
+        error: 'Connection already exists between these components',
+        details: {
+          existingConnection: {
+            id: existingConnection.id,
+            sourceId: existingConnection.sourceId,
+            targetId: existingConnection.targetId,
+            connectionType: existingConnection.connectionType,
+            domain: existingConnection.domain,
+            createdAt: existingConnection.createdAt
+          },
+          sourceComponent: {
+            id: sourceComponent.id,
+            name: sourceComponent.name,
+            type: sourceComponent.type
+          },
+          targetComponent: {
+            id: targetComponent.id,
+            name: targetComponent.name,
+            type: targetComponent.type
+          }
+        }
       });
     }
 

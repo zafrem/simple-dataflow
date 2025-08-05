@@ -52,6 +52,15 @@
             <i class="el-icon-files"></i>
           </el-button>
         </el-tooltip>
+        
+        <el-tooltip content="Saved Positions" placement="bottom">
+          <el-button 
+            :type="currentLayout === 'preset' ? 'primary' : 'default'"
+            size="small"
+            @click="changeLayout('preset')">
+            <i class="el-icon-position"></i>
+          </el-button>
+        </el-tooltip>
       </el-button-group>
       
       <el-divider direction="vertical" />
@@ -65,6 +74,18 @@
       <el-tooltip content="Center Graph" placement="bottom">
         <el-button size="small" @click="centerGraph">
           <i class="el-icon-aim"></i>
+        </el-button>
+      </el-tooltip>
+      
+      <el-tooltip content="Save Current Positions" placement="bottom">
+        <el-button size="small" @click="savePositions">
+          <i class="el-icon-document-add"></i>
+        </el-button>
+      </el-tooltip>
+      
+      <el-tooltip content="Clear Saved Positions" placement="bottom">
+        <el-button size="small" @click="clearPositions">
+          <i class="el-icon-delete"></i>
         </el-button>
       </el-tooltip>
       
@@ -226,6 +247,21 @@ const setupEventListeners = () => {
     if (!node.hasClass('highlighted')) {
       node.style('border-width', '2px')
     }
+  })
+
+  // Auto-save positions when nodes are moved
+  let positionSaveTimeout = null
+  cy.on('position', 'node', () => {
+    // Debounce position saving to avoid too frequent saves
+    if (positionSaveTimeout) {
+      clearTimeout(positionSaveTimeout)
+    }
+    
+    positionSaveTimeout = setTimeout(() => {
+      if (currentLayout.value === 'preset') {
+        componentStore.saveNodePositions(cy)
+      }
+    }, 1000) // Save 1 second after last position change
   })
 }
 
@@ -392,7 +428,8 @@ const loadGraphData = async () => {
       
       // Apply current layout
       await nextTick()
-      applyLayout(cy, currentLayout.value)
+      const savedPositions = componentStore.getSavedPositions()
+      applyLayout(cy, currentLayout.value, savedPositions)
       
       // Update stats
       const stats = getGraphStats(cy)
@@ -412,7 +449,8 @@ const changeLayout = (layoutName) => {
   
   // Update store instead of local ref
   componentStore.setCurrentLayout(layoutName)
-  applyLayout(cy, layoutName)
+  const savedPositions = componentStore.getSavedPositions()
+  applyLayout(cy, layoutName, savedPositions)
 }
 
 const fitToView = () => {
@@ -424,6 +462,28 @@ const fitToView = () => {
 const centerGraph = () => {
   if (cy) {
     cy.center()
+  }
+}
+
+const savePositions = () => {
+  if (!cy) return
+  
+  try {
+    componentStore.saveNodePositions(cy)
+    ElMessage.success('Node positions saved successfully')
+  } catch (error) {
+    console.error('Error saving positions:', error)
+    ElMessage.error('Failed to save node positions')
+  }
+}
+
+const clearPositions = () => {
+  try {
+    componentStore.clearSavedPositions()
+    ElMessage.success('Saved positions cleared')
+  } catch (error) {
+    console.error('Error clearing positions:', error)
+    ElMessage.error('Failed to clear saved positions')
   }
 }
 
@@ -539,6 +599,8 @@ defineExpose({
   fitToView,
   centerGraph,
   exportGraph,
+  savePositions,
+  clearPositions,
   // Removed highlight functions to prevent flickering
 })
 </script>

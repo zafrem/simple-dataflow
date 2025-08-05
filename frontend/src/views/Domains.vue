@@ -643,11 +643,25 @@ const saveDomain = async () => {
       resetDomainForm()
       await loadDomains()
     } else {
-      throw new Error(data.error || 'Failed to save domain')
+      // Handle duplicate and other specific errors
+      if (response.status === 409 && data.details) {
+        const existingItem = data.details.existingDomain
+        ElMessage.error({
+          message: `${data.error}`,
+          description: existingItem ? `Existing domain: "${existingItem.name}" (ID: ${existingItem.id})` : '',
+          duration: 6000
+        })
+      } else {
+        throw new Error(data.error || 'Failed to save domain')
+      }
     }
   } catch (error) {
     console.error('Error saving domain:', error)
-    ElMessage.error('Failed to save domain')
+    if (error.message) {
+      ElMessage.error(error.message)
+    } else {
+      ElMessage.error('Failed to save domain')
+    }
   } finally {
     saving.value = false
   }
@@ -680,11 +694,25 @@ const saveGroup = async () => {
       resetGroupForm()
       await loadGroups(selectedDomain.value.id)
     } else {
-      throw new Error(data.error || 'Failed to save group')
+      // Handle duplicate and other specific errors
+      if (response.status === 409 && data.details) {
+        const existingItem = data.details.existingGroup
+        ElMessage.error({
+          message: `${data.error}`,
+          description: existingItem ? `Existing group: "${existingItem.name}" in ${existingItem.domain || 'domain ID ' + existingItem.domainId}` : '',
+          duration: 6000
+        })
+      } else {
+        throw new Error(data.error || 'Failed to save group')
+      }
     }
   } catch (error) {
     console.error('Error saving group:', error)
-    ElMessage.error('Failed to save group')
+    if (error.message) {
+      ElMessage.error(error.message)
+    } else {
+      ElMessage.error('Failed to save group')
+    }
   } finally {
     saving.value = false
   }
