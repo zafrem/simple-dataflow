@@ -21,12 +21,6 @@ router.get('/', async (req, res) => {
               required: false
             }
           ]
-        },
-        {
-          model: Component,
-          as: 'components',
-          where: { isActive: true },
-          required: false
         }
       ],
       order: [['name', 'ASC']]
@@ -34,7 +28,10 @@ router.get('/', async (req, res) => {
 
     const domainStats = domains.map(domain => {
       const groupCount = domain.groups?.length || 0;
-      const componentCount = domain.components?.length || 0;
+      // Count components through groups since we removed direct component association
+      const componentCount = domain.groups?.reduce((total, group) => {
+        return total + (group.components?.length || 0);
+      }, 0) || 0;
       const pipelineCount = domain.pipelines?.length || 0;
 
       return {
@@ -78,12 +75,6 @@ router.get('/:id', async (req, res) => {
               required: false
             }
           ]
-        },
-        {
-          model: Component,
-          as: 'components',
-          where: { isActive: true },
-          required: false
         }
       ]
     });

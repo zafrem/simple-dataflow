@@ -54,7 +54,7 @@
                 <span class="domain-name">{{ domain.name }}</span>
               </div>
               <el-dropdown @command="handleDomainAction" @click.stop>
-                <el-button type="text" :icon="MoreFilled" />
+                <el-button link :icon="MoreFilled" />
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item :command="{ action: 'view-board', domain }">View Board</el-dropdown-item>
@@ -102,7 +102,7 @@
 
             <div class="domain-actions">
               <el-button 
-                type="text" 
+                link 
                 size="small" 
                 @click.stop="managePipelines(domain)">
                 Manage Pipelines
@@ -154,7 +154,7 @@
                 </el-tag>
               </div>
               <el-dropdown @command="handleGroupActionInDomain" @click.stop>
-                <el-button type="text" :icon="MoreFilled" />
+                <el-button link :icon="MoreFilled" />
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item :command="{ action: 'view-board', group }">View Board</el-dropdown-item>
@@ -326,7 +326,7 @@
             <div class="pipeline-header-card">
               <span class="pipeline-name">{{ pipeline.name }}</span>
               <el-dropdown @command="handlePipelineAction">
-                <el-button type="text" :icon="MoreFilled" size="small" />
+                <el-button link :icon="MoreFilled" size="small" />
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item :command="{ action: 'edit', pipeline }">Edit</el-dropdown-item>

@@ -48,7 +48,7 @@
               </el-tag>
             </div>
             <el-dropdown @command="handleGroupAction">
-              <el-button type="text" :icon="MoreFilled" />
+              <el-button link :icon="MoreFilled" />
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item :command="{ action: 'view-board', group }">View Board</el-dropdown-item>
@@ -190,7 +190,16 @@
                         </el-tag>
                       </div>
                       <div class="component-details">
-                        <span class="component-tag">{{ component.tag }}</span>
+                        <div class="component-tags">
+                          <el-tag 
+                            v-for="tag in (Array.isArray(component.tag) ? component.tag : [component.tag])" 
+                            :key="tag"
+                            :type="getTagType(tag)"
+                            size="mini"
+                            class="multi-tag">
+                            {{ tag }}
+                          </el-tag>
+                        </div>
                         <span v-if="component.domain" class="component-domain">{{ component.domain }}</span>
                       </div>
                     </div>
@@ -291,7 +300,16 @@
                             </el-tag>
                           </div>
                           <div class="component-details">
-                            <span class="component-tag">{{ component.tag }}</span>
+                            <div class="component-tags">
+                              <el-tag 
+                                v-for="tag in (Array.isArray(component.tag) ? component.tag : [component.tag])" 
+                                :key="tag"
+                                :type="getTagType(tag)"
+                                size="mini"
+                                class="multi-tag">
+                                {{ tag }}
+                              </el-tag>
+                            </div>
                             <span v-if="component.domain" class="component-domain">{{ component.domain }}</span>
                           </div>
                         </div>
@@ -455,6 +473,18 @@ const getRoleColor = (role) => {
     'DEPENDENCY': 'info'
   }
   return colors[role] || 'primary'
+}
+
+const getTagType = (tag) => {
+  const tagTypeMap = {
+    'PIPS': 'danger',
+    'SOX': 'warning', 
+    'HR': 'success',
+    'Proj': 'primary',
+    'Infra': 'info',
+    'Other': ''
+  }
+  return tagTypeMap[tag] || ''
 }
 
 // Navigation function
@@ -643,11 +673,12 @@ const filterComponents = () => {
   // Apply search filter
   if (componentSearch.value) {
     const searchTerm = componentSearch.value.toLowerCase()
-    filtered = filtered.filter(component => 
-      component.name.toLowerCase().includes(searchTerm) ||
-      component.tag.toLowerCase().includes(searchTerm) ||
-      component.description?.toLowerCase().includes(searchTerm) 
-    )
+    filtered = filtered.filter(component => {
+      const tags = Array.isArray(component.tag) ? component.tag : [component.tag];
+      return component.name.toLowerCase().includes(searchTerm) ||
+        tags.some(tag => tag.toLowerCase().includes(searchTerm)) ||
+        component.description?.toLowerCase().includes(searchTerm);
+    })
   }
   
   // Apply type filter
@@ -945,6 +976,17 @@ onMounted(() => {
 
 .component-tag {
   font-size: 12px;
+}
+
+.component-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.multi-tag {
+  margin: 0;
 }
 
 .loading-container {

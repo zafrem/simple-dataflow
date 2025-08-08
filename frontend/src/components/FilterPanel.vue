@@ -47,7 +47,7 @@
       <div class="filter-title">
         Domains
         <el-button
-          type="text"
+          link
           size="small"
           @click="toggleAllDomains"
           style="float: right;">

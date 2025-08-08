@@ -66,7 +66,7 @@
                 <span class="log-timestamp">{{ formatTimestamp(log.timestamp) }}</span>
               </div>
               <el-dropdown @command="handleLogAction">
-                <el-button type="text" :icon="MoreFilled" size="small" />
+                <el-button link :icon="MoreFilled" size="small" />
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item :command="{ action: 'edit', log }">Edit Importance</el-dropdown-item>

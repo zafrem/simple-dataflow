@@ -24,6 +24,7 @@ while [[ $# -gt 0 ]]; do
             echo "Options:"
             echo "  --container, -c SERVICE    Start individual container for testing"
             echo "  --native, -n               Start services natively without Docker"
+            echo "                             (automatically seeds database if empty)"
             echo "  --help, -h                 Show this help message"
             echo ""
             echo "Available services: postgres, redis, backend, frontend"
@@ -32,7 +33,7 @@ while [[ $# -gt 0 ]]; do
             echo "  $0                         Start all services with docker-compose"
             echo "  $0 -c postgres            Start only PostgreSQL container"
             echo "  $0 -c backend             Start only backend container"
-            echo "  $0 -n                      Start all services natively"
+            echo "  $0 -n                      Start all services natively with sample data"
             exit 0
             ;;
         *)
@@ -211,7 +212,36 @@ EOF
     
     # Wait for services to start
     echo "⏳ Waiting for services to be ready..."
-    sleep 5
+    sleep 8
+    
+    # Check if database has data, if not seed it
+    echo "🌱 Checking if database needs initial data..."
+    cd backend
+    COMPONENT_COUNT=$(node -e "
+      const { Component } = require('./models');
+      const { initializeDatabase } = require('./models');
+      initializeDatabase().then(() => {
+        Component.count().then(count => {
+          console.log(count);
+          process.exit(0);
+        }).catch(() => {
+          console.log(0);
+          process.exit(0);
+        });
+      }).catch(() => {
+        console.log(0);
+        process.exit(0);
+      });
+    " 2>/dev/null || echo 0)
+    
+    if [ "$COMPONENT_COUNT" -eq 0 ]; then
+      echo "📊 No data found, seeding database with sample data..."
+      node scripts/seedData.js
+      echo "✅ Database seeded with sample data!"
+    else
+      echo "📊 Found $COMPONENT_COUNT components in database, skipping seed"
+    fi
+    cd ..
     
     echo ""
     echo "✅ Development environment is ready!"

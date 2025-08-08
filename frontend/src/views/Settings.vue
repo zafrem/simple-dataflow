@@ -30,7 +30,7 @@
                 </div>
                 <div class="connector-actions">
                   <el-dropdown @command="handleConnectorAction">
-                    <el-button type="text">
+                    <el-button link>
                       <el-icon><More /></el-icon>
                     </el-button>
                     <template #dropdown>

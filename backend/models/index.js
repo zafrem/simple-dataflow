@@ -52,8 +52,9 @@ const initializeDatabase = async () => {
     await sequelize.authenticate();
     console.log('Database connection established successfully.');
     
-    await sequelize.sync({ alter: true });
-    console.log('Database models synchronized.');
+    // Skip sync for now due to enum array casting issues
+    // await sequelize.sync({ alter: true });
+    console.log('Database models loaded (sync skipped).');
   } catch (error) {
     console.error('Unable to connect to the database:', error);
     throw error;

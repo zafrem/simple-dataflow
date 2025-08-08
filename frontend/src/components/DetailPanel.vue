@@ -9,7 +9,7 @@
           <h3>{{ component?.name }}</h3>
         </div>
         <el-button
-          type="text"
+          link
           :icon="Close"
           @click="closePanel"
           style="color: white;" />
@@ -21,8 +21,17 @@
         <h4>Basic Information</h4>
         <div class="info-grid">
           <div class="info-item">
-            <span class="label">Tag:</span>
-            <el-tag size="small" type="info">{{ component.tag }}</el-tag>
+            <span class="label">Tags:</span>
+            <div class="tags-container">
+              <el-tag 
+                v-for="tag in (Array.isArray(component.tag) ? component.tag : [component.tag])" 
+                :key="tag"
+                :type="getTagType(tag)"
+                size="small"
+                class="tag-item">
+                {{ tag }}
+              </el-tag>
+            </div>
           </div>
           
           <div class="info-item">
@@ -222,6 +231,18 @@ const getTypeTagType = (type) => {
   return typeMap[type] || 'info'
 }
 
+const getTagType = (tag) => {
+  const tagTypeMap = {
+    'PIPS': 'danger',
+    'SOX': 'warning', 
+    'HR': 'success',
+    'Proj': 'primary',
+    'Infra': 'info',
+    'Other': ''
+  }
+  return tagTypeMap[tag] || ''
+}
+
 const getConnectorStatusType = (status) => {
   const statusMap = {
     'success': 'success',
@@ -391,6 +412,17 @@ watch(() => props.component, (newComponent) => {
   color: var(--text-primary);
   text-align: right;
   word-break: break-word;
+}
+
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.tag-item {
+  margin: 0;
 }
 
 .description {

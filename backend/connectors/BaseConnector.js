@@ -25,22 +25,14 @@ class BaseConnector {
 
     for (const componentData of this.components) {
       try {
-        const existingTags = await Component.findAll({
-          attributes: ['tag'],
-          raw: true
-        }).then(results => results.map(r => r.tag));
-
-        const tag = componentData.tag || generateUniqueTag(
-          componentData.name, 
-          componentData.type, 
-          existingTags
-        );
-
+        // Use name and type to identify components since tag is no longer unique
         const [component, created] = await Component.findOrCreate({
-          where: { tag },
+          where: { 
+            name: componentData.name,
+            type: componentData.type 
+          },
           defaults: {
             ...componentData,
-            tag,
             connectorId,
             lastSeen: new Date()
           }
@@ -49,6 +41,7 @@ class BaseConnector {
         if (!created) {
           await component.update({
             name: componentData.name,
+            tag: componentData.tag || ['Other'],
             metadata: { ...component.metadata, ...componentData.metadata },
             lastSeen: new Date(),
             isActive: true
@@ -72,13 +65,24 @@ class BaseConnector {
     return results;
   }
 
-  addComponent(name, type, metadata = {}) {
+  addComponent(name, type, metadata = {}, tags = ['Other']) {
     const componentType = type || inferComponentType(name, this.constructor.name);
+    
+    // Validate tags against allowed values and ensure at least one tag
+    const allowedTags = ['PIPS', 'SOX', 'HR', 'Proj', 'Infra', 'Other'];
+    let validTags = Array.isArray(tags) ? 
+      tags.filter(tag => allowedTags.includes(tag)) : [];
+    
+    // If no valid tags provided, default to 'Other'
+    if (validTags.length === 0) {
+      validTags = ['Other'];
+    }
     
     this.components.push({
       name: name.trim(),
       type: componentType,
       source: this.getSourceType(),
+      tag: validTags, // Use the existing tag field as array
       metadata: {
         discoveredAt: new Date().toISOString(),
         connector: this.constructor.name,
@@ -87,20 +91,7 @@ class BaseConnector {
     });
   }
 
-  generateTag(name, type) {
-    if (this.config.tagPattern) {
-      return generateTagPattern(this.config.tagPattern, {
-        name: name.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_'),
-        service: name.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_'),
-        table: name.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_'),
-        match: name.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_')
-      });
-    }
-    
-    const baseName = name.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_');
-    const typeSuffix = type.toLowerCase();
-    return `${baseName}_${typeSuffix}`;
-  }
+  // generateTag method removed since we now use predefined tags
 
   getSourceType() {
     return this.constructor.name.toLowerCase().replace('connector', '');

@@ -15,12 +15,13 @@ import Domains from './views/Domains.vue'
 import Settings from './views/Settings.vue'
 
 const routes = [
-  { path: '/', name: 'Dashboard', component: Dashboard },
+  { path: '/', name: 'Domains', component: Domains },
+  { path: '/domains', name: 'DomainsPage', component: Domains },
+  { path: '/dashboard', name: 'Dashboard', component: Dashboard },
   { path: '/diagram', name: 'DataDiagram', component: DataDiagram },
   { path: '/anomaly-log', name: 'AnomalyLog', component: AnomalyLog },
   { path: '/data', name: 'DataView', component: DataView },
   { path: '/groups', name: 'Groups', component: Groups },
-  { path: '/domains', name: 'Domains', component: Domains },
   { path: '/settings', name: 'Settings', component: Settings }
 ]
 

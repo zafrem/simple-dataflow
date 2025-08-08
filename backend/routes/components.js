@@ -219,7 +219,7 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const { name, description, metadata, isActive, team } = req.body;
+    const { name, description, metadata, isActive, team, tag } = req.body;
     
     const component = await Component.findByPk(req.params.id);
     if (!component) {
@@ -232,6 +232,24 @@ router.put('/:id', async (req, res) => {
     if (metadata !== undefined) updates.metadata = metadata;
     if (isActive !== undefined) updates.isActive = isActive;
     if (team !== undefined) updates.team = team;
+    if (tag !== undefined) {
+      // Validate tags
+      const allowedTags = ['PIPS', 'SOX', 'HR', 'Proj', 'Infra', 'Other'];
+      if (Array.isArray(tag)) {
+        const invalidTags = tag.filter(t => !allowedTags.includes(t));
+        if (invalidTags.length > 0) {
+          return res.status(400).json({ 
+            error: `Invalid tags: ${invalidTags.join(', ')}. Allowed tags: ${allowedTags.join(', ')}` 
+          });
+        }
+        if (tag.length === 0) {
+          return res.status(400).json({ error: 'At least one tag is required' });
+        }
+        updates.tag = tag;
+      } else {
+        return res.status(400).json({ error: 'Tag must be an array' });
+      }
+    }
 
     await component.update(updates);
 

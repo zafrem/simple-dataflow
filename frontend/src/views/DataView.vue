@@ -74,7 +74,7 @@
               <el-popover trigger="click" width="400">
                 <pre>{{ JSON.stringify(row.metadata, null, 2) }}</pre>
                 <template #reference>
-                  <el-button size="small" type="text">View Metadata</el-button>
+                  <el-button size="small" link>View Metadata</el-button>
                 </template>
               </el-popover>
             </template>
@@ -148,7 +148,7 @@
               <el-popover trigger="click" width="500">
                 <pre>{{ JSON.stringify(row.config, null, 2) }}</pre>
                 <template #reference>
-                  <el-button size="small" type="text">View Config</el-button>
+                  <el-button size="small" link>View Config</el-button>
                 </template>
               </el-popover>
             </template>
@@ -224,7 +224,7 @@
               <el-popover trigger="click" width="400">
                 <pre>{{ JSON.stringify(row.metadata, null, 2) }}</pre>
                 <template #reference>
-                  <el-button size="small" type="text">View Metadata</el-button>
+                  <el-button size="small" link>View Metadata</el-button>
                 </template>
               </el-popover>
             </template>

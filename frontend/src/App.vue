@@ -27,7 +27,7 @@
               <el-icon><DataAnalysis /></el-icon>
               Data View
             </el-menu-item>
-            <el-menu-item index="/">
+            <el-menu-item index="/dashboard">
               <el-icon><Connection /></el-icon>
               Board
             </el-menu-item>

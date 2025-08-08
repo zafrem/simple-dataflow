@@ -16,12 +16,21 @@ const Component = sequelize.define('Component', {
     }
   },
   tag: {
-    type: DataTypes.STRING,
+    type: DataTypes.ARRAY(DataTypes.ENUM('PIPS', 'SOX', 'HR', 'Proj', 'Infra', 'Other')),
     allowNull: false,
-    unique: true,
+    defaultValue: ['Other'],
     validate: {
       notEmpty: true,
-      len: [1, 100]
+      isValidTagArray(value) {
+        if (!Array.isArray(value) || value.length === 0) {
+          throw new Error('Tag must be an array with at least one value');
+        }
+        const allowedTags = ['PIPS', 'SOX', 'HR', 'Proj', 'Infra', 'Other'];
+        const invalidTags = value.filter(tag => !allowedTags.includes(tag));
+        if (invalidTags.length > 0) {
+          throw new Error(`Invalid tags: ${invalidTags.join(', ')}. Allowed tags: ${allowedTags.join(', ')}`);
+        }
+      }
     }
   },
   type: {
@@ -84,7 +93,8 @@ const Component = sequelize.define('Component', {
   timestamps: true,
   indexes: [
     {
-      fields: ['tag']
+      fields: ['tag'],
+      using: 'gin'
     },
     {
       fields: ['type']
@@ -104,12 +114,8 @@ const Component = sequelize.define('Component', {
   ],
   hooks: {
     beforeSave: (component) => {
-      if (component.tag) {
-        const match = component.tag.match(/^(.+)_(db|api|app|storage|pipes)$/);
-        if (match) {
-          component.domain = match[1];
-        }
-      }
+      // Since tag is now an array, we can't derive domain from it
+      // Domain extraction logic can be moved to name or other fields if needed
     }
   }
 });
