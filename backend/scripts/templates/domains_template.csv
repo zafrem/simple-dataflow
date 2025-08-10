@@ -1,0 +1,6 @@
+name,description,color,pipelines,metadata
+Finance Domain,Financial services and accounting systems,#ff6b6b,"[{""name"": ""Payment Processing"", ""steps"": [""Validate"", ""Process"", ""Confirm""]}]","{""owner"": ""finance-team"", ""criticality"": ""high""}"
+Marketing Domain,Marketing automation and analytics,#4ecdc4,"[]","{""owner"": ""marketing-team"", ""criticality"": ""medium""}"
+Operations Domain,Operational systems and processes,#45b7d1,"[]","{""owner"": ""ops-team"", ""criticality"": ""high""}"
+HR Domain,Human resources management systems,#96ceb4,"[]","{""owner"": ""hr-team"", ""criticality"": ""low""}"
+IT Infrastructure,Core IT infrastructure and monitoring,#feca57,"[]","{""owner"": ""it-team"", ""criticality"": ""critical""}"

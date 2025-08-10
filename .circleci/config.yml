@@ -1,0 +1,146 @@
+version: 2.1
+
+orbs:
+  node: circleci/node@5.1.0
+  docker: circleci/docker@2.2.0
+
+jobs:
+  test-backend:
+    executor: node/default
+    working_directory: ~/project/backend
+    steps:
+      - checkout:
+          path: ~/project
+      - node/install-packages:
+          pkg-manager: npm
+      - run:
+          name: Run backend tests
+          command: npm test
+      - run:
+          name: Run backend linting
+          command: npm run lint || true
+
+  test-frontend:
+    executor: node/default
+    working_directory: ~/project/frontend
+    steps:
+      - checkout:
+          path: ~/project
+      - node/install-packages:
+          pkg-manager: npm
+      - run:
+          name: Run frontend tests
+          command: npm test
+      - run:
+          name: Build frontend
+          command: npm run build
+      - store_artifacts:
+          path: dist
+          destination: frontend-build
+
+  build-and-push-backend:
+    executor: docker/docker
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 20.10.14
+      - docker/check:
+          docker-username: DOCKER_USERNAME
+          docker-password: DOCKER_PASSWORD
+      - docker/build:
+          image: $DOCKER_USERNAME/dataflow-backend
+          tag: << pipeline.git.tag >>,$CIRCLE_SHA1,latest
+          path: ./backend
+      - docker/push:
+          image: $DOCKER_USERNAME/dataflow-backend
+          tag: << pipeline.git.tag >>,$CIRCLE_SHA1,latest
+
+  build-and-push-frontend:
+    executor: docker/docker
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 20.10.14
+      - docker/check:
+          docker-username: DOCKER_USERNAME
+          docker-password: DOCKER_PASSWORD
+      - docker/build:
+          image: $DOCKER_USERNAME/dataflow-frontend
+          tag: << pipeline.git.tag >>,$CIRCLE_SHA1,latest
+          path: ./frontend
+      - docker/push:
+          image: $DOCKER_USERNAME/dataflow-frontend
+          tag: << pipeline.git.tag >>,$CIRCLE_SHA1,latest
+
+  deploy:
+    executor: node/default
+    steps:
+      - checkout
+      - run:
+          name: Deploy to staging
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "main" ]; then
+              echo "Deploying to staging environment"
+              # Add your deployment commands here
+              # kubectl apply -f k8s/staging/
+              # helm upgrade --install dataflow ./helm-chart
+            fi
+      - run:
+          name: Deploy to production
+          command: |
+            if [[ "${CIRCLE_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Deploying to production environment"
+              # Add your production deployment commands here
+              # kubectl apply -f k8s/production/
+              # helm upgrade --install dataflow ./helm-chart --namespace production
+            fi
+
+workflows:
+  version: 2
+  test-and-deploy:
+    jobs:
+      - test-backend:
+          filters:
+            tags:
+              only: /.*/
+      - test-frontend:
+          filters:
+            tags:
+              only: /.*/
+      - build-and-push-backend:
+          requires:
+            - test-backend
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /^v.*/
+      - build-and-push-frontend:
+          requires:
+            - test-frontend
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /^v.*/
+      - deploy:
+          requires:
+            - build-and-push-backend
+            - build-and-push-frontend
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /^v.*/
+
+  # Nightly builds for testing
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 2 * * *"
+          filters:
+            branches:
+              only: main
+    jobs:
+      - test-backend
+      - test-frontend
