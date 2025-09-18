@@ -239,6 +239,17 @@
       </el-tab-pane>
     </el-tabs>
     
+    <!-- Feedback Button -->
+    <div class="feedback-section">
+      <el-button 
+        type="primary" 
+        @click="sendFeedback"
+        style="margin-bottom: 16px;">
+        <el-icon><Message /></el-icon>
+        Send Feedback / Inquiry
+      </el-button>
+    </div>
+    
     <!-- Repository Link -->
     <div class="repository-link">
       <a href="https://github.com/zafrem/simple-dataflow" target="_blank" rel="noopener noreferrer">
@@ -300,7 +311,7 @@
 
 <script setup>
 import { ref, onMounted, reactive } from 'vue'
-import { Plus, More, Clock, Refresh, Loading, Check, Close } from '@element-plus/icons-vue'
+import { Plus, More, Clock, Refresh, Loading, Check, Close, Message } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useSystemStore } from '../stores/system'
 import { useSocketStore } from '../stores/socket'
@@ -524,6 +535,15 @@ const resetConnectorForm = () => {
   newConnector.schedule = ''
   newConnector.config = {}
   configJson.value = ''
+}
+
+const sendFeedback = () => {
+  const email = import.meta.env.VITE_FEEDBACK_EMAIL || 'nobody@gmail.com'
+  const subject = 'DataFlow Visualizer Feedback/Inquiry'
+  const body = 'Please describe your feedback or inquiry here...'
+  
+  const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+  window.open(mailtoUrl, '_blank')
 }
 
 const getConnectorTypeTag = (type) => {
@@ -823,9 +843,16 @@ onMounted(async () => {
   margin-top: 4px;
 }
 
-.repository-link {
+.feedback-section {
   text-align: center;
   margin-top: 24px;
+  padding: 16px;
+  border-top: 1px solid var(--border-light);
+}
+
+.repository-link {
+  text-align: center;
+  margin-top: 0;
   padding: 16px;
   border-top: 1px solid var(--border-light);
 }
