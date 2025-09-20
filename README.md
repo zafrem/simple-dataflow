@@ -20,4 +20,6 @@ Access the application at http://localhost:3000
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is dual-licensed under the MIT License and a Commercial License.
+- MIT License: Free for open source and personal use : GNU General Public License v3.0 License - see the [LICENSE](LICENSE) file for details.
+- Commercial License: Required for commercial use, available via separate agreement Contact: zafrem@gmail.com
